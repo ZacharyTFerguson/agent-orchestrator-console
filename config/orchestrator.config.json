@@ -1,0 +1,35 @@
+{
+  "console": {
+    "name": "Agent Orchestrator Console",
+    "port": 4000
+  },
+  "agents": [
+    {
+      "id": "planner",
+      "name": "Planner",
+      "role": "Breaks high-level goals into concrete, ordered tasks.",
+      "emoji": "🗺️",
+      "heartbeatSeconds": 8,
+      "cron": "*/1 * * * *",
+      "cronTask": "Review the backlog and propose the next action."
+    },
+    {
+      "id": "researcher",
+      "name": "Researcher",
+      "role": "Gathers context and references for the current task.",
+      "emoji": "🔎",
+      "heartbeatSeconds": 12,
+      "cron": "*/2 * * * *",
+      "cronTask": "Refresh source material for open questions."
+    },
+    {
+      "id": "executor",
+      "name": "Executor",
+      "role": "Carries out approved tasks and reports results.",
+      "emoji": "⚙️",
+      "heartbeatSeconds": 10,
+      "cron": "*/1 * * * *",
+      "cronTask": "Execute the highest-priority ready task."
+    }
+  ]
+}
