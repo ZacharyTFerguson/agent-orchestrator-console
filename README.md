@@ -52,7 +52,7 @@ Point the server at a different file with `ORCHESTRATOR_CONFIG=/path/to/config.j
 ## API
 
 | Method | Path | Description |
-| --- | --- | --- |
+| --- | --- |
 | GET | `/api/health` | Health check |
 | GET | `/api/config` | Console config + agent status |
 | GET | `/api/agents` | Agent status (with heartbeat liveness) |
@@ -71,9 +71,13 @@ npm test               # node:test suite for the orchestrator core
 ## Environment variables
 
 | Variable | Default | Purpose |
-| --- | --- | --- |
+| --- | --- |
 | `PORT` | `4000` | API port |
 | `WEB_PORT` | `5173` | Vite dev port |
 | `API_TARGET` | `http://localhost:4000` | Vite proxy target |
 | `DB_PATH` | `data/orchestrator.db` | SQLite file (`:memory:` for tests) |
 | `ORCHESTRATOR_CONFIG` | `config/orchestrator.config.json` | Agent config path |
+
+## See also
+
+Workstation collab map (three planes; **not** LightDicomReader; this app does not open DICOM studies). In-app chat replies are canned templates (`#composeReply`), not an LLM bus: [docs/collab/README.md](docs/collab/README.md).
