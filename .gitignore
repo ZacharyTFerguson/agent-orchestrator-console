@@ -1,3 +1,12 @@
+node_modules/
+data/
+web/dist/
+*.log
+.DS_Store
+*.db
+*.db-shm
+*.db-wal
+
 # Migration temp/cache (not part of the archive)
 .migration-blobs/
 scripts/b64_cache/

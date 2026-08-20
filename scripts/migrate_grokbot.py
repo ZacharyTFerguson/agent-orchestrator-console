@@ -134,29 +134,50 @@ def migrate_rules() -> Path:
     return RULES_DST
 
 
+GROKBOT_BEGIN = "<!-- GROKBOT_BEGIN -->"
+GROKBOT_END = "<!-- GROKBOT_END -->"
+
+GROKBOT_SECTION = """\
+## GrokBot archive (2026-08-20)
+
+This repo includes a **GrokBot archive** migrated from Google Drive for use with **Cursor Cloud Agents**. The dump preserves agent personalities, workflow skills, standing rules, routines, and memory from the paused GrokBot team (August 2026).
+
+### Layout
+
+| Path | Contents |
+|------|----------|
+| [`grokbot-archive/`](grokbot-archive/) | Full mirror of the Drive dump: README, Personalities, Skills, Routines, Memory & rules, Work snapshot |
+| [`.cursor/skills/`](.cursor/skills/) | 14 workflow skills as Cursor skill folders (`SKILL.md` each) |
+| [`.cursor/rules/grokbot-standing-rules.mdc`](.cursor/rules/grokbot-standing-rules.mdc) | Always-on standing rules from `STATUS.md` (holds, vacation send, pairing writers, card homes) |
+| [`.cursor/agents/`](.cursor/agents/) | One agent definition per Grok personality |
+| [`grokbot-archive/Routines/`](grokbot-archive/Routines/) | Grok automation definitions (inbox check, prescreen, oil updater, resume hourly) — map to Cursor Automations manually |
+
+Re-run [`scripts/migrate_grokbot.py`](scripts/migrate_grokbot.py) after editing archive skills or personalities to refresh `.cursor/skills/` and `.cursor/agents/`.
+
+### Resume pointers
+
+- Standing rules and holds: `grokbot-archive/Memory & rules/STATUS.md` and `.cursor/rules/grokbot-standing-rules.mdc`
+- PDI email allowlist: `grokbot-archive/Memory & rules/pdi-active-allowlist.txt`
+- Original Grok paths (`/home/box/...`) are preserved in skill and agent files for reference
+"""
+
+
 def update_readme() -> None:
     readme = ROOT / "README.md"
+    block = f"{GROKBOT_BEGIN}\n{GROKBOT_SECTION}{GROKBOT_END}\n"
+    if readme.exists():
+        text = readme.read_text(encoding="utf-8")
+        if GROKBOT_BEGIN in text and GROKBOT_END in text:
+            start = text.index(GROKBOT_BEGIN)
+            end = text.index(GROKBOT_END) + len(GROKBOT_END)
+            readme.write_text(text[:start] + block.rstrip() + text[end:], encoding="utf-8")
+            return
+        readme.write_text(text.rstrip() + "\n\n" + block, encoding="utf-8")
+        return
     readme.write_text(
         "# agent-orchestrator-console\n\n"
         "Configurable Multi-Agent Orchestrator Console with chat, cron, heartbeats and SQLite persistence.\n\n"
-        "## GrokBot archive (2026-08-20)\n\n"
-        "This repo includes a **GrokBot archive** migrated from Google Drive for use with **Cursor Cloud Agents**. "
-        "The dump preserves agent personalities, workflow skills, standing rules, routines, and memory from the "
-        "paused GrokBot team (August 2026).\n\n"
-        "### Layout\n\n"
-        "| Path | Contents |\n"
-        "|------|----------|\n"
-        "| [`grokbot-archive/`](grokbot-archive/) | Full mirror of the Drive dump: README, Personalities, Skills, "
-        "Routines, Memory & rules, Work snapshot |\n"
-        "| [`.cursor/skills/`](.cursor/skills/) | 14 workflow skills as Cursor skill folders (`SKILL.md` each) |\n"
-        "| [`.cursor/rules/grokbot-standing-rules.mdc`](.cursor/rules/grokbot-standing-rules.mdc) | "
-        "Always-on standing rules from `STATUS.md` (holds, vacation send, pairing writers, card homes) |\n"
-        "| [`.cursor/agents/`](.cursor/agents/) | One agent definition per Grok personality |\n\n"
-        "### Resume pointers\n\n"
-        "- Standing rules and holds: `grokbot-archive/Memory & rules/STATUS.md` and "
-        "`.cursor/rules/grokbot-standing-rules.mdc`\n"
-        "- PDI email allowlist: `grokbot-archive/Memory & rules/pdi-active-allowlist.txt`\n"
-        "- Original Grok paths (`/home/box/...`) are preserved in skill and agent files for reference\n",
+        + block,
         encoding="utf-8",
     )
 

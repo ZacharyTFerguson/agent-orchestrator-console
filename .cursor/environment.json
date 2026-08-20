@@ -1,0 +1,20 @@
+{
+  "name": "agent-orchestrator-console",
+  "install": "npm install",
+  "terminals": [
+    {
+      "name": "api",
+      "command": "npm run dev:api",
+      "description": "Express + WebSocket API with SQLite persistence, cron and heartbeats on http://localhost:4000"
+    },
+    {
+      "name": "web",
+      "command": "npm run dev:web",
+      "description": "Vite React console on http://localhost:5173 (proxies /api and /ws to the API on :4000)"
+    }
+  ],
+  "ports": [
+    { "name": "web console", "port": 5173 },
+    { "name": "api", "port": 4000 }
+  ]
+}
