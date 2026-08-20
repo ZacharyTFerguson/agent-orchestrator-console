@@ -44,6 +44,7 @@ Siblings `../dicomlight` and `../orchestrator` are **workstation-local**, not gi
 - [PLANES.md](PLANES.md) — three planes, Agent Control cousin, ports, operator look-here
 - [RULES.md](RULES.md) — SHOULD / MUST NOT, Cursor scaffold freeze, prompt buses, `OWNER-PAUSE`
 - [OIL-CHANGES.md](OIL-CHANGES.md) — Cursor took the GrokBot 5K due-list; live export path and leftover eFleets/OneStep writes
+- [APIS.md](APIS.md) — light Sheets / OneStep / eFleets clients (no googleapis, no Chrome)
 
 Sibling operator guides (workstation-local; may be absent on a Cloud Agent VM) — **by name, not copied**:
 

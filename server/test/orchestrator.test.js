@@ -35,9 +35,9 @@ test("agents are persisted on construction", () => {
   );
 });
 
-test("chat to a specific agent persists user message and one reply", () => {
+test("chat to a specific agent persists user message and one reply", async () => {
   const orch = makeOrchestrator();
-  const { userMessage, replies } = orch.handleChat("status?", "planner");
+  const { userMessage, replies } = await orch.handleChat("status?", "planner");
   assert.equal(userMessage.text, "status?");
   assert.equal(replies.length, 1);
   assert.equal(replies[0].agent_id, "planner");
@@ -47,20 +47,20 @@ test("chat to a specific agent persists user message and one reply", () => {
   assert.equal(messages.length, 2);
 });
 
-test("broadcast chat replies from every agent", () => {
+test("broadcast chat replies from every agent", async () => {
   const orch = makeOrchestrator();
-  const { replies } = orch.handleChat("hello all");
+  const { replies } = await orch.handleChat("hello all");
   assert.equal(replies.length, 3);
 });
 
-test("empty chat text is rejected", () => {
+test("empty chat text is rejected", async () => {
   const orch = makeOrchestrator();
-  assert.throws(() => orch.handleChat("   "), /required/);
+  await assert.rejects(() => orch.handleChat("   "), /required/);
 });
 
-test("unknown agent is rejected", () => {
+test("unknown agent is rejected", async () => {
   const orch = makeOrchestrator();
-  assert.throws(() => orch.handleChat("hi", "ghost"), /Unknown agent/);
+  await assert.rejects(() => orch.handleChat("hi", "ghost"), /Unknown agent/);
 });
 
 test("heartbeats are recorded and reflected in status", () => {
@@ -79,9 +79,9 @@ test("cron runs are recorded", () => {
   assert.equal(runs[0].task, "do the thing");
 });
 
-test("oil-updater run persists a due-list report", () => {
+test("oil-updater run persists a due-list report", async () => {
   const orch = makeOrchestrator();
-  const { result } = orch.runAgentTask("oil-updater");
+  const { result } = await orch.runAgentTask("oil-updater");
   assert.ok(result.counts.overdue >= 1);
   assert.equal(result.review.ok, true);
   const latest = orch.getLatestOilReport();
@@ -90,20 +90,20 @@ test("oil-updater run persists a due-list report", () => {
   assert.match(runs[0].task, /overdue/);
 });
 
-test("oil-change chat returns the due list instead of a canned template", () => {
+test("oil-change chat returns the due list instead of a canned template", async () => {
   const orch = makeOrchestrator();
-  const { replies } = orch.handleChat("How are the vehicles looking today?", "oil-updater");
+  const { replies } = await orch.handleChat("How are the vehicles looking today?", "oil-updater");
   assert.match(replies[0].text, /Took this over from GrokBot/);
   assert.match(replies[0].text, /Change oil \(overdue\)/);
 });
 
-test("events are emitted for chat, heartbeat and cron", () => {
+test("events are emitted for chat, heartbeat and cron", async () => {
   const orch = makeOrchestrator();
   const types = [];
   orch.on("event", (e) => types.push(e.type));
   orch.recordHeartbeat("planner");
   orch.recordCronRun("planner", "task");
-  orch.handleChat("hi", "planner");
+  await orch.handleChat("hi", "planner");
   assert.ok(types.includes("heartbeat"));
   assert.ok(types.includes("cron"));
   assert.ok(types.includes("message"));

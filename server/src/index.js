@@ -9,6 +9,7 @@ import { existsSync } from "node:fs";
 import { loadConfig } from "./config.js";
 import { openDatabase } from "./db.js";
 import { Orchestrator } from "./orchestrator.js";
+import { integrationStatus } from "./clients/index.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -33,28 +34,31 @@ export function createApp(orchestrator) {
     const latest = orchestrator.getLatestOilReport();
     res.json(latest ?? { report: null, message: "No oil-change run yet. Trigger oil-updater." });
   });
-  app.post("/api/oil-changes/run", (_req, res) => {
+  app.get("/api/integrations", (_req, res) => {
+    res.json(integrationStatus());
+  });
+  app.post("/api/oil-changes/run", async (_req, res) => {
     try {
-      const result = orchestrator.runAgentTask("oil-updater");
+      const result = await orchestrator.runAgentTask("oil-updater");
       res.status(201).json(result);
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
   });
 
-  app.post("/api/chat", (req, res) => {
+  app.post("/api/chat", async (req, res) => {
     try {
       const { text, agentId } = req.body ?? {};
-      const result = orchestrator.handleChat(text, agentId || null);
+      const result = await orchestrator.handleChat(text, agentId || null);
       res.status(201).json(result);
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
   });
 
-  app.post("/api/agents/:id/run", (req, res) => {
+  app.post("/api/agents/:id/run", async (req, res) => {
     try {
-      const result = orchestrator.runAgentTask(req.params.id);
+      const result = await orchestrator.runAgentTask(req.params.id);
       res.status(201).json(result);
     } catch (err) {
       const status = /Unknown agent/.test(err.message) ? 404 : 400;

@@ -11,6 +11,7 @@ function useOrchestrator() {
   const [messages, setMessages] = useState([]);
   const [events, setEvents] = useState([]);
   const [oil, setOil] = useState(null);
+  const [integrations, setIntegrations] = useState(null);
   const [connected, setConnected] = useState(false);
 
   const refreshAgents = useCallback(() => api("/api/agents").then(setAgents).catch(() => {}), []);
@@ -21,6 +22,7 @@ function useOrchestrator() {
 
   useEffect(() => {
     api("/api/messages").then(setMessages).catch(() => {});
+    api("/api/integrations").then(setIntegrations).catch(() => {});
     refreshAgents();
     refreshOil();
 
@@ -45,7 +47,7 @@ function useOrchestrator() {
     };
   }, [refreshAgents, refreshOil]);
 
-  return { agents, messages, events, oil, connected, refreshAgents, refreshOil };
+  return { agents, messages, events, oil, integrations, connected, refreshAgents, refreshOil };
 }
 
 function AgentCard({ agent, onRun }) {
@@ -69,7 +71,7 @@ function AgentCard({ agent, onRun }) {
 }
 
 export default function App() {
-  const { agents, messages, events, oil, connected, refreshAgents, refreshOil } = useOrchestrator();
+  const { agents, messages, events, oil, integrations, connected, refreshAgents, refreshOil } = useOrchestrator();
   const [text, setText] = useState("");
   const [target, setTarget] = useState("");
   const [error, setError] = useState("");
@@ -185,6 +187,13 @@ export default function App() {
             </p>
             <button onClick={runOil}>Run due-list</button>
           </div>
+          {integrations && (
+            <div className="oil-integrations" title="Light API clients — no Chrome, no googleapis">
+              <span className={integrations.sheets?.configured ? "on" : "off"}>Sheets</span>
+              <span className={integrations.onestep?.configured ? "on" : "off"}>OneStep</span>
+              <span className="off">eFleets export</span>
+            </div>
+          )}
           {oil?.payload?.counts && (
             <div className="oil-counts">
               <span>{oil.payload.counts.overdue} overdue</span>

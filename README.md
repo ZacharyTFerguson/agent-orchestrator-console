@@ -62,7 +62,8 @@ Point the server at a different file with `ORCHESTRATOR_CONFIG=/path/to/config.j
 | POST | `/api/chat` | `{ text, agentId? }` – send a message |
 | POST | `/api/agents/:id/run` | Trigger an agent's task now |
 | GET | `/api/oil-changes` | Latest CHANGE OIL AFTER 5K due-list (took over from GrokBot) |
-| POST | `/api/oil-changes/run` | Rebuild the due-list from `OIL_CHANGE_CSV_PATH` or `data/efleets-all-cars.csv` |
+| POST | `/api/oil-changes/run` | Rebuild the due-list from Sheets API, `OIL_CHANGE_CSV_PATH`, or `data/efleets-all-cars.csv` |
+| GET | `/api/integrations` | Light Sheets / OneStep / eFleets status (configured flags only) |
 
 ## Tests
 
@@ -80,7 +81,11 @@ npm test               # node:test suite for the orchestrator core
 | `DB_PATH` | `data/orchestrator.db` | SQLite file (`:memory:` for tests) |
 | `ORCHESTRATOR_CONFIG` | `config/orchestrator.config.json` | Agent config path |
 | `OIL_CHANGE_CSV_PATH` | `data/efleets-all-cars.csv` or sample fixture | Export of Automations **eFleets All Cars sorted**. Do not commit the live fleet file. |
+| `GOOGLE_SHEETS_ACCESS_TOKEN` | unset | Sheets API v4 Bearer token (read/write). When set, the due-list loads the working tab over HTTPS. |
+| `GOOGLE_SHEETS_API_KEY` | unset | Sheets API key for public read-only sheets. |
+| `ONESTEP_API_KEY` | unset | OneStep public `api-key`. Never commit or log it. |
+| `ONESTEP_BEARER_TOKEN` | unset | Optional OneStep JWT. |
 
 ## See also
 
-Workstation collab map (three planes; **not** LightDicomReader; this app does not open DICOM studies). In-app chat replies are canned templates (`#composeReply`), not an LLM bus — except the oil-change agents, which return the real 5K due-list: [docs/collab/README.md](docs/collab/README.md) · [docs/collab/OIL-CHANGES.md](docs/collab/OIL-CHANGES.md).
+Workstation collab map (three planes; **not** LightDicomReader; this app does not open DICOM studies). In-app chat replies are canned templates (`#composeReply`), not an LLM bus — except the oil-change agents, which return the real 5K due-list: [docs/collab/README.md](docs/collab/README.md) · [docs/collab/OIL-CHANGES.md](docs/collab/OIL-CHANGES.md) · [docs/collab/APIS.md](docs/collab/APIS.md).

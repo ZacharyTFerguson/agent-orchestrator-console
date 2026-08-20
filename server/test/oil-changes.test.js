@@ -96,8 +96,8 @@ test("reviewer rejects a polluted overdue list", () => {
   assert.ok(review.failures.some((f) => f.startsWith("SUSPECT_AS_DUE")));
 });
 
-test("job loads the sample fixture by default when no live CSV is set", () => {
-  const result = runOilDueListJob({ csvPath: SAMPLE });
+test("job loads the sample fixture by default when no live CSV is set", async () => {
+  const result = await runOilDueListJob({ csvPath: SAMPLE });
   assert.equal(result.counts.overdue, 3);
   assert.equal(result.review.ok, true);
   assert.match(result.summary, /3 overdue/);

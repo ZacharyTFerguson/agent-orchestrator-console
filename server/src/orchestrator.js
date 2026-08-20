@@ -72,7 +72,7 @@ export class Orchestrator extends EventEmitter {
    * when no agentId is given). Persists the inbound message and each agent
    * reply, and streams both over the event bus. Returns the created rows.
    */
-  handleChat(text, agentId = null) {
+  async handleChat(text, agentId = null) {
     if (!text || !text.trim()) throw new Error("Message text is required");
 
     const targets = agentId ? this.agents.filter((a) => a.id === agentId) : this.agents;
@@ -86,24 +86,25 @@ export class Orchestrator extends EventEmitter {
     });
     this.#emit("message", agentId, { message: userMessage });
 
-    const replies = targets.map((agent) => {
+    const replies = [];
+    for (const agent of targets) {
       const reply = this.#saveMessage({
         sender: agent.id,
         agentId: agent.id,
         role: "agent",
-        text: this.#composeReply(agent, text.trim()),
+        text: await this.#composeReply(agent, text.trim()),
       });
       this.#emit("message", agent.id, { message: reply });
-      return reply;
-    });
+      replies.push(reply);
+    }
 
     return { userMessage, replies };
   }
 
-  #composeReply(agent, text) {
+  async #composeReply(agent, text) {
     if (this.#isOilAgent(agent) && looksLikeOilChangeRequest(text)) {
       try {
-        const result = this.runOilJob(agent.id, agent.job || "oil-due-list");
+        const result = await this.runOilJob(agent.id, agent.job || "oil-due-list");
         return `${agent.emoji} ${agent.name} here. Took this over from GrokBot.\n\n${result.report}`;
       } catch (err) {
         return `${agent.emoji} ${agent.name} here. Oil due-list failed: ${err.message}`;
@@ -143,8 +144,8 @@ export class Orchestrator extends EventEmitter {
     };
   }
 
-  runOilJob(agentId, job = "oil-due-list") {
-    const result = runOilDueListJob();
+  async runOilJob(agentId, job = "oil-due-list", opts = {}) {
+    const result = await runOilDueListJob(opts);
     if (job === "oil-review" && !result.review.ok) {
       result.summary = `Oil review REJECT: ${result.review.failures.join(", ")}`;
     } else if (job === "oil-review") {
@@ -154,12 +155,12 @@ export class Orchestrator extends EventEmitter {
     return result;
   }
 
-  runAgentTask(agentId) {
+  async runAgentTask(agentId, opts = {}) {
     const agent = this.agents.find((a) => a.id === agentId);
     if (!agent) throw new Error(`Unknown agent: ${agentId}`);
 
     if (agent.job === "oil-due-list" || agent.job === "oil-review") {
-      const result = this.runOilJob(agent.id, agent.job);
+      const result = await this.runOilJob(agent.id, agent.job, opts);
       const status = agent.job === "oil-review" && !result.review.ok ? "error" : "ok";
       const id = this.recordCronRun(agent.id, result.summary, status);
       return { id, agentId: agent.id, result };
@@ -182,11 +183,9 @@ export class Orchestrator extends EventEmitter {
 
       if (agent.cron && cron.validate(agent.cron)) {
         const task = cron.schedule(agent.cron, () => {
-          try {
-            this.runAgentTask(agent.id);
-          } catch (err) {
+          this.runAgentTask(agent.id).catch((err) => {
             this.recordCronRun(agent.id, err.message, "error");
-          }
+          });
         });
         this.cronTasks.push(task);
       }
