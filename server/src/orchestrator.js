@@ -1,5 +1,7 @@
 import { EventEmitter } from "node:events";
 import cron from "node-cron";
+import { looksLikeOilChangeRequest } from "./oil-changes.js";
+import { runOilDueListJob } from "./oil-change-job.js";
 
 /**
  * Core orchestrator. Owns the agent line-up and drives three background
@@ -99,7 +101,72 @@ export class Orchestrator extends EventEmitter {
   }
 
   #composeReply(agent, text) {
+    if (this.#isOilAgent(agent) && looksLikeOilChangeRequest(text)) {
+      try {
+        const result = this.runOilJob(agent.id, agent.job || "oil-due-list");
+        return `${agent.emoji} ${agent.name} here. Took this over from GrokBot.\n\n${result.report}`;
+      } catch (err) {
+        return `${agent.emoji} ${agent.name} here. Oil due-list failed: ${err.message}`;
+      }
+    }
     return `${agent.emoji} ${agent.name} here. On it — as the agent that ${agent.role.replace(/\.$/, "").toLowerCase()}, I'll handle: "${text}".`;
+  }
+
+  #isOilAgent(agent) {
+    return agent.job === "oil-due-list" || agent.job === "oil-review" || String(agent.id).startsWith("oil-");
+  }
+
+  saveOilReport(agentId, result) {
+    const info = this.db
+      .prepare(
+        `INSERT INTO oil_reports (agent_id, overdue_count, suspect_count, backward_count, report, payload)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        agentId,
+        result.counts.overdue,
+        result.counts.suspect,
+        result.counts.backward,
+        result.report,
+        JSON.stringify(result)
+      );
+    this.#emit("oil", agentId, { summary: result.summary, id: info.lastInsertRowid });
+    return info.lastInsertRowid;
+  }
+
+  getLatestOilReport() {
+    const row = this.db.prepare("SELECT * FROM oil_reports ORDER BY id DESC LIMIT 1").get();
+    if (!row) return null;
+    return {
+      ...row,
+      payload: JSON.parse(row.payload),
+    };
+  }
+
+  runOilJob(agentId, job = "oil-due-list") {
+    const result = runOilDueListJob();
+    if (job === "oil-review" && !result.review.ok) {
+      result.summary = `Oil review REJECT: ${result.review.failures.join(", ")}`;
+    } else if (job === "oil-review") {
+      result.summary = `Oil review PASS: ${result.summary}`;
+    }
+    this.saveOilReport(agentId, result);
+    return result;
+  }
+
+  runAgentTask(agentId) {
+    const agent = this.agents.find((a) => a.id === agentId);
+    if (!agent) throw new Error(`Unknown agent: ${agentId}`);
+
+    if (agent.job === "oil-due-list" || agent.job === "oil-review") {
+      const result = this.runOilJob(agent.id, agent.job);
+      const status = agent.job === "oil-review" && !result.review.ok ? "error" : "ok";
+      const id = this.recordCronRun(agent.id, result.summary, status);
+      return { id, agentId: agent.id, result };
+    }
+
+    const id = this.recordCronRun(agent.id, agent.cronTask || "Manual run");
+    return { id, agentId: agent.id };
   }
 
   start() {
@@ -115,7 +182,11 @@ export class Orchestrator extends EventEmitter {
 
       if (agent.cron && cron.validate(agent.cron)) {
         const task = cron.schedule(agent.cron, () => {
-          this.recordCronRun(agent.id, agent.cronTask || "Scheduled run");
+          try {
+            this.runAgentTask(agent.id);
+          } catch (err) {
+            this.recordCronRun(agent.id, err.message, "error");
+          }
         });
         this.cronTasks.push(task);
       }

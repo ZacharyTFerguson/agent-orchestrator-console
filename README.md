@@ -61,6 +61,8 @@ Point the server at a different file with `ORCHESTRATOR_CONFIG=/path/to/config.j
 | GET | `/api/heartbeats` | Recent heartbeats |
 | POST | `/api/chat` | `{ text, agentId? }` – send a message |
 | POST | `/api/agents/:id/run` | Trigger an agent's task now |
+| GET | `/api/oil-changes` | Latest CHANGE OIL AFTER 5K due-list (took over from GrokBot) |
+| POST | `/api/oil-changes/run` | Rebuild the due-list from `OIL_CHANGE_CSV_PATH` or `data/efleets-all-cars.csv` |
 
 ## Tests
 
@@ -77,7 +79,8 @@ npm test               # node:test suite for the orchestrator core
 | `API_TARGET` | `http://localhost:4000` | Vite proxy target |
 | `DB_PATH` | `data/orchestrator.db` | SQLite file (`:memory:` for tests) |
 | `ORCHESTRATOR_CONFIG` | `config/orchestrator.config.json` | Agent config path |
+| `OIL_CHANGE_CSV_PATH` | `data/efleets-all-cars.csv` or sample fixture | Export of Automations **eFleets All Cars sorted**. Do not commit the live fleet file. |
 
 ## See also
 
-Workstation collab map (three planes; **not** LightDicomReader; this app does not open DICOM studies). In-app chat replies are canned templates (`#composeReply`), not an LLM bus: [docs/collab/README.md](docs/collab/README.md).
+Workstation collab map (three planes; **not** LightDicomReader; this app does not open DICOM studies). In-app chat replies are canned templates (`#composeReply`), not an LLM bus — except the oil-change agents, which return the real 5K due-list: [docs/collab/README.md](docs/collab/README.md) · [docs/collab/OIL-CHANGES.md](docs/collab/OIL-CHANGES.md).

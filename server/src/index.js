@@ -29,6 +29,18 @@ export function createApp(orchestrator) {
   app.get("/api/messages", (_req, res) => res.json(orchestrator.getMessages()));
   app.get("/api/cron", (_req, res) => res.json(orchestrator.getCronRuns()));
   app.get("/api/heartbeats", (_req, res) => res.json(orchestrator.getHeartbeats()));
+  app.get("/api/oil-changes", (_req, res) => {
+    const latest = orchestrator.getLatestOilReport();
+    res.json(latest ?? { report: null, message: "No oil-change run yet. Trigger oil-updater." });
+  });
+  app.post("/api/oil-changes/run", (_req, res) => {
+    try {
+      const result = orchestrator.runAgentTask("oil-updater");
+      res.status(201).json(result);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  });
 
   app.post("/api/chat", (req, res) => {
     try {
@@ -41,10 +53,13 @@ export function createApp(orchestrator) {
   });
 
   app.post("/api/agents/:id/run", (req, res) => {
-    const agent = orchestrator.agents.find((a) => a.id === req.params.id);
-    if (!agent) return res.status(404).json({ error: "Unknown agent" });
-    const id = orchestrator.recordCronRun(agent.id, agent.cronTask || "Manual run");
-    res.status(201).json({ id, agentId: agent.id });
+    try {
+      const result = orchestrator.runAgentTask(req.params.id);
+      res.status(201).json(result);
+    } catch (err) {
+      const status = /Unknown agent/.test(err.message) ? 404 : 400;
+      res.status(status).json({ error: err.message });
+    }
   });
 
   const webDist = resolve(__dirname, "../../web/dist");
