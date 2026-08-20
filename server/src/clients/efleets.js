@@ -23,7 +23,7 @@ export function eFleetsCapability() {
     publicApi: EFLEETS_PUBLIC_API,
     portal: EFLEETS_PORTAL,
     companyId: EFLEETS_COMPANY_ID,
-    lightPath: "portal CSV/XLSX export → parseFleetCsv / parseMaintenanceExport",
+    lightPath: "portal CSV/XLSX export → parseFleetCsv / parseMileageHistoryExport",
     login: "not supported in this app",
   };
 }
