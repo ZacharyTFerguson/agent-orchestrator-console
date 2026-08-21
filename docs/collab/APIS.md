@@ -16,7 +16,7 @@ Cloud Agents and the IDE attach those clients as the `oil-fleet` MCP. See [MCP.m
 | Auth | `Authorization: Bearer` access token, or `key=` API key for public read |
 | Client | `server/src/clients/sheets.js` |
 
-Working sheet (only): Automations Copy `1e0AhA0LTLru0_o-WZsO81eL7-ekfbxV-VTDvaitGHHQ`, tab **eFleets All Cars sorted**.
+Working sheet (only), pinned in `config/oil-sheet.json`: [Automations Copy](https://docs.google.com/spreadsheets/d/1e0AhA0LTLru0_o-WZsO81eL7-ekfbxV-VTDvaitGHHQ/edit?gid=733911326#gid=733911326) tab **eFleets All Cars sorted**.
 
 Never write the original PDI template `1eaz_NlsJ9mohfjR3l61piTQOwuMAjVfqDsC0o4Kftss`. Never write columns **I/J** (formulas). The client throws before fetch if either is requested.
 
