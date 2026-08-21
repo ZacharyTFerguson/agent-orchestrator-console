@@ -37,6 +37,7 @@ npm test
 
 # configured? (booleans only — never prints keys)
 npm run oil-changes -- --integrations
+npm run oil-onestep-probe   # status/counts only; never prints keys or JWTs
 
 # live export (gitignored)
 # save Automations Copy → eFleets All Cars sorted as data/efleets-all-cars.csv

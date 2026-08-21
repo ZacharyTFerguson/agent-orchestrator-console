@@ -47,7 +47,8 @@ Live working sheet stays pinned. Writes from the 90-day eFleets CSVs go to a **c
 - Due-list: `server/src/oil-changes.js`, `oil-change-job.js`, `oil-change-cli.js` (`npm run oil-changes`)
 - Agents in `config/orchestrator.config.json`: `oil-updater` (`0 6 * * *`, `oil-due-list`), `oil-implementer`, `oil-reviewer`. Keep Planner / Researcher / Executor.
 - API: `GET/POST /api/oil-changes`, `/api/oil-changes/run`, `GET /api/integrations`
-- Light clients (no `googleapis`, no Chrome): `server/src/clients/{http,sheets,onestep,efleets}.js`
+- Light clients (no `googleapis`, no Chrome): `server/src/clients/{http,sheets,onestep,efleets}.js` (OneStep protected keys → short-lived RS256 JWT)
+- Probe: `npm run oil-onestep-probe` (`server/src/oil-onestep-probe-cli.js`)
 - oil-fleet stdio MCP: `server/src/mcp/oil-mcp.js` · tools `oil_status`, `oil_due_list`, `sheets_get_values`, `sheets_update_values`, `onestep_*`, `compose_last_reading`
 - IDE config: `.cursor/mcp.json` lists `composio` → `https://connect.composio.dev/mcp` and `oil-fleet` stdio
 - Docs: `docs/collab/OIL-CHANGES.md`, `APIS.md`, `MCP.md`, `EFLEETS-UPDATE.md`
@@ -100,7 +101,7 @@ Composio Connect URL `https://connect.composio.dev/mcp` is live streamable HTTP.
 1. Dated copy **already has** the 2026-08-21 90-day eFleets CSV apply. Counts: 27 overdue, 5 suspect, 22 backward, 18 incomplete (was 30 / 5 / 14 / 19). Do not paste unit rows.
 2. Do not retarget `config/oil-sheet.json` unless the user says that copy is now the working sheet.
 3. Do not start an environment snapshot or draft build unless the user asks.
-4. eFleets portal login and OneStep History recapture stay HOLD.
+4. eFleets portal login stays HOLD. OneStep JWT wrap + `npm run oil-onestep-probe` are in the client. Cloud secret names `OneStepAPIKEY` / `OneStepAPIKEYTobeSigned` map by PEM shape. Miles-since recapture stays HOLD. Do not paste the key, PEM, or a signed JWT.
 
 ## Pointers
 
