@@ -62,3 +62,11 @@ This pass is **not** cron. Re-run when the user drops new eFleets CSVs.
 Writes: 19 last-oil (E/F), 133 last-reading (G/H), 56 unchanged. Skipped: 30 backward fuel, 2 jumps > 30k, 13 older fuel. Unmatched in the 90-day window: 105 oil, 9 fuel. 149 A1 ranges in 4 Composio batches, **304 cells**, I/J left as formulas. Live working sheet was not written (Drive `modifiedTime` stayed `2026-08-21T15:43:47Z`).
 
 Do **not** retarget `config/oil-sheet.json` unless the user says the dated copy is now the working sheet.
+
+## Card homes and fat-finger oil
+
+The 2026-08-21 CSV apply matched some Maintenance ROs by **unit nickname**. Two **PA14** rows then received the same 8/18 oil. The updater now matches oil by **eFleets id** unless that nickname is unique on the sheet.
+
+It also remaps in-band Fuel DETAILS punches from a **host** onto the **home** in `config/oil-card-homes.json` (PA9→PA21 card `…31757`, PA24→PA23 card `…31781`). Without that, PA9/PA24 last-reading absorbs the other car's miles.
+
+Do **not** copy dated-copy last oil onto the working sheet when it fights a tight own-card fuel cluster (VA10 Maintenance 278,374 vs fuels near 275,879). Reconstruct with `.cursor/skills/fix-fat-finger-oil/SKILL.md` only after ≥3 consistent fuels.

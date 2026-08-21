@@ -27,7 +27,7 @@ Fixed:
 
 ## Steps
 
-1. **Last good odo.** Read E/F (last oil). Shop / maintenance beats a fighting fuel punch. That odometer is the Enterprise value at the shop visit. Mileage History is date-only — do not invent midnight from it.
+1. **Last good odo.** Read E/F (last oil). Shop / maintenance beats a fighting fuel punch **unless** the car's own card has ≥3 consistent fuels — then reconstruct last oil (`FAT_FINGER_OIL`, `.cursor/skills/fix-fat-finger-oil/SKILL.md`). If Fuel DETAILS PCVN names another unit, remap first (`.cursor/skills/remap-swapped-fuel-cards/SKILL.md`). Mileage History is date-only — do not invent midnight from it.
 
 2. **Device id.** `GET /v3/api/public/device?limit=300`. Match `display_name` prefix (`VA-15:`). `device-info` is names only. Do not paste `device_id` into chat or git.
 
@@ -92,3 +92,5 @@ Midnight-on-8/17 through 8/21 was 746.9 mi. The extra ~122 mi is driving **befor
 - Write columns I/J or the original PDI template
 - Paste API keys, PEMs, JWTs, portal passwords, VIN, plate, or `device_id`
 - Blast several OneStep report RUNs if you fall back to Chrome Total Distance
+- Promote a Maintenance oil odo that fights ≥3 in-band fuels on this unit's own card
+- Copy one oil RO onto two rows that share a nickname (two PA14s)

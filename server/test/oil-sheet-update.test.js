@@ -17,6 +17,7 @@ import {
   toSheetValueRanges,
 } from "../src/oil-sheet-update.js";
 import { ORIGINAL_TEMPLATE_ID, WORKING_SHEET_ID, classifyVehicle } from "../src/oil-changes.js";
+import { fuelsAreConsistent, loadCardHomes } from "../src/oil-card-homes.js";
 
 const SHEET = `legend
 ,,,
@@ -82,6 +83,11 @@ test("updater writes oil and reading and never I/J", () => {
   assert.equal(classifyVehicle(after[0]).status, "ok");
 });
 
+test("three in-band fuels are enough to treat a fighting oil odo as fat-fingered", () => {
+  assert.equal(fuelsAreConsistent([{ odometer: 274100 }, { odometer: 275000 }, { odometer: 275879 }]).ok, true);
+  assert.equal(fuelsAreConsistent([{ odometer: 275879 }]).reason, "NEED_THREE_FUELS");
+});
+
 test("updater skips backward and suspect jumps", () => {
   const sheet = `Region,Vehicle,YEAR,Plate #,Last Oil Change Completed,Date,Last Reading,Date,Change oil at 0,Mileage due at,notes,Last Safety Inspection,eFleets ID
 EAST,UNIT-C,2024,,50000,7/1/2026,51000,8/1/2026,0,55000,-,,EF3
@@ -134,4 +140,54 @@ test("chunked apply payloads keep range and values only", () => {
   assert.deepEqual(toSheetValueRanges(chunks[0]), [
     { range: "'eFleets All Cars sorted'!E5:F5", values: [[1, "8/1/2026"]], majorDimension: "ROWS" },
   ]);
+});
+
+test("shared unit nicknames do not copy one oil RO onto both rows", () => {
+  const sheet = `Region,Vehicle,YEAR,Plate #,Last Oil Change Completed,Date,Last Reading,Date,Change oil at 0,Mileage due at,notes,Last Safety Inspection,eFleets ID
+PA,PA14,2023,,121589,6/12/2026,124000,8/12/2026,0,126589,-,,EFOLD
+PA,PA14,2025,,35405,7/2/2026,41500,8/11/2026,0,40405,-,,EFNEW
+`;
+  const maint = `RO Completed Date,RO Status*,RO ID,Vehicle,Customer Vehicle ID,Odometer,Service Desc
+8/18/2026,Work Completed,RO-NEW,EFNEW,PA14,42212,Oil Change
+`;
+  const details = `Vehicle,Provider Transaction Date,Provider Transaction Time,Provider Odometer,Provider Unusual Odometer Flag
+EFNEW,8/19/2026,09:00:00 AM,42435,N
+`;
+  const proposed = proposeOilSheetUpdates({
+    sheetRows: parseSheetVehicleRows(sheet).vehicles,
+    oilChanges: parseCompletedOilChanges(maint),
+    fuelReadings: parseLatestFuelReadings(details),
+    spreadsheetId: "copy-id",
+  });
+  const oldRow = proposed.patches.find((p) => p.sheetRow === 2);
+  const newRow = proposed.patches.find((p) => p.sheetRow === 3);
+  assert.equal(oldRow, undefined);
+  assert.ok(newRow);
+  assert.equal(newRow.values[0][0], 42212);
+});
+
+test("card-home remap moves host fuel onto the home vehicle", () => {
+  const sheet = `Region,Vehicle,YEAR,Plate #,Last Oil Change Completed,Date,Last Reading,Date,Change oil at 0,Mileage due at,notes,Last Safety Inspection,eFleets ID
+PA,PA9,2024,,23464,12/20/2025,129143,8/12/2026,0,28464,-,,285JCH
+PA,PA21,2024,,129622,8/17/2026,42806,5/3/2026,0,134622,-,,285JCR
+`;
+  const maint = `RO Completed Date,RO Status*,RO ID,Vehicle,Customer Vehicle ID,Odometer,Service Desc
+8/17/2026,Work Completed,RO-PA21,285JCR,PA21,129622,Oil Change
+`;
+  const details = `Vehicle,Provider Transaction Date,Provider Transaction Time,Provider Odometer,Provider Unusual Odometer Flag
+285JCH,8/18/2026,09:00:00 AM,130209,N
+`;
+  const proposed = proposeOilSheetUpdates({
+    sheetRows: parseSheetVehicleRows(sheet).vehicles,
+    oilChanges: parseCompletedOilChanges(maint),
+    fuelReadings: parseLatestFuelReadings(details),
+    spreadsheetId: "copy-id",
+    cardHomes: loadCardHomes(),
+  });
+  const pa9 = proposed.patches.find((p) => p.vehicle === "PA9");
+  const pa21 = proposed.patches.find((p) => p.vehicle === "PA21");
+  assert.equal(pa9, undefined);
+  assert.ok(pa21);
+  assert.equal(pa21.values[0].includes(130209), true);
+  assert.doesNotMatch(JSON.stringify(proposed.patches), /129143/);
 });

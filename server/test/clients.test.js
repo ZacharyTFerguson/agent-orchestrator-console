@@ -12,6 +12,7 @@ import {
 } from "../src/clients/sheets.js";
 import {
   composeLastReading,
+  reconstructLastOil,
   extractDistance,
   listDeviceInfo,
   listDevices,
@@ -161,6 +162,15 @@ test("Last Reading is Enterprise odo plus OneStep miles since T", () => {
   });
   assert.equal(composeLastReading({ enterpriseOdo: null, oneStepMiles: 10 }).skip, true);
   assert.equal(composeLastReading({ enterpriseOdo: 10, oneStepMiles: null }).reason, "NO_ONESTEP");
+});
+
+test("fat-finger last oil is last good fuel minus GPS since the shop second", () => {
+  assert.deepEqual(reconstructLastOil({ fuelOdo: 275879, oneStepMiles: 3504 }), {
+    skip: false,
+    lastOil: 272375,
+    method: "FAT_FINGER_OIL",
+  });
+  assert.equal(reconstructLastOil({ fuelOdo: 275879, oneStepMiles: null }).reason, "NO_ONESTEP");
 });
 
 test("OneStep listDevices uses api-key query and does not log it", async () => {

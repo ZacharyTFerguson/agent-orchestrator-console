@@ -186,3 +186,18 @@ export function composeLastReading({ enterpriseOdo, oneStepMiles }) {
     method: "MD40_METHOD",
   };
 }
+
+/**
+ * Inverse of composeLastReading: last good fuel minus GPS miles since the
+ * oil-shop second. Gate with ≥3 consistent fuels before treating shop oil
+ * as a fat-finger.
+ */
+export function reconstructLastOil({ fuelOdo, oneStepMiles }) {
+  if (fuelOdo == null) return { skip: true, reason: "NO_FUEL_ODO" };
+  if (oneStepMiles == null) return { skip: true, reason: "NO_ONESTEP" };
+  return {
+    skip: false,
+    lastOil: fuelOdo - oneStepMiles,
+    method: "FAT_FINGER_OIL",
+  };
+}

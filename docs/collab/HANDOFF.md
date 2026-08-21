@@ -101,7 +101,7 @@ Composio Connect URL `https://connect.composio.dev/mcp` is live streamable HTTP.
 1. Dated copy **already has** the 2026-08-21 90-day eFleets CSV apply. Counts: 27 overdue, 5 suspect, 22 backward, 18 incomplete (was 30 / 5 / 14 / 19). Do not paste unit rows.
 2. Do not retarget `config/oil-sheet.json` unless the user says that copy is now the working sheet.
 3. Do not start an environment snapshot or draft build unless the user asks.
-4. eFleets portal login stays HOLD. OneStep JWT wrap + `npm run oil-onestep-probe` are in the client. Cloud secret names `OneStepAPIKEY` / `OneStepAPIKEYTobeSigned` map by PEM shape. Shop-stop miles: `.cursor/skills/pull-miles-since-oil-shop/SKILL.md`. Do not paste the key, PEM, or a signed JWT.
+4. eFleets portal login stays HOLD. OneStep JWT wrap + `npm run oil-onestep-probe` are in the client. Cloud secret names `OneStepAPIKEY` / `OneStepAPIKEYTobeSigned` map by PEM shape. Shop-stop miles: `.cursor/skills/pull-miles-since-oil-shop/SKILL.md`. Fat-finger oil: `.cursor/skills/fix-fat-finger-oil/SKILL.md`. Card homes: `.cursor/skills/remap-swapped-fuel-cards/SKILL.md`. Do not paste the key, PEM, or a signed JWT.
 
 ## Pointers
 
@@ -109,3 +109,5 @@ Composio Connect URL `https://connect.composio.dev/mcp` is live streamable HTTP.
 - Vendor APIs: `docs/collab/APIS.md`
 - MCP attach: `docs/collab/MCP.md`
 - Last Reading from shop GPS stop: `.cursor/skills/pull-miles-since-oil-shop/SKILL.md`
+- Fat-finger last oil (fuel minus GPS): `.cursor/skills/fix-fat-finger-oil/SKILL.md`
+- Swapped fuel cards: `.cursor/skills/remap-swapped-fuel-cards/SKILL.md` · `config/oil-card-homes.json`
