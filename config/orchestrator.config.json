@@ -30,6 +30,36 @@
       "heartbeatSeconds": 10,
       "cron": "*/1 * * * *",
       "cronTask": "Execute the highest-priority ready task."
+    },
+    {
+      "id": "oil-updater",
+      "name": "Oil Change Updater",
+      "role": "Takes over GrokBot's 6am eFleets due-list: CHANGE OIL AFTER 5K on the Automations copy.",
+      "emoji": "🛢️",
+      "heartbeatSeconds": 20,
+      "cron": "0 6 * * *",
+      "cronTask": "Build the CHANGE OIL AFTER 5K overdue list from the eFleets All Cars sorted export.",
+      "job": "oil-due-list"
+    },
+    {
+      "id": "oil-implementer",
+      "name": "Oil Change Implementer",
+      "role": "Rebuilds the overdue list from the working Automations sheet export. Never edits the original PDI template.",
+      "emoji": "🔧",
+      "heartbeatSeconds": 20,
+      "cron": "15 6 * * *",
+      "cronTask": "Recompute overdue / suspect / backward from the working sheet export.",
+      "job": "oil-due-list"
+    },
+    {
+      "id": "oil-reviewer",
+      "name": "Oil Change Reviewer",
+      "role": "Blocks fake green: overdue must not include suspect jumps or backward odometers.",
+      "emoji": "✅",
+      "heartbeatSeconds": 25,
+      "cron": "30 6 * * *",
+      "cronTask": "Review the latest oil due-list and refuse polluted overdue rows.",
+      "job": "oil-review"
     }
   ]
 }

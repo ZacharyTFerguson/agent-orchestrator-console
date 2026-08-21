@@ -10,13 +10,21 @@ function useOrchestrator() {
   const [agents, setAgents] = useState([]);
   const [messages, setMessages] = useState([]);
   const [events, setEvents] = useState([]);
+  const [oil, setOil] = useState(null);
+  const [integrations, setIntegrations] = useState(null);
   const [connected, setConnected] = useState(false);
 
   const refreshAgents = useCallback(() => api("/api/agents").then(setAgents).catch(() => {}), []);
+  const refreshOil = useCallback(
+    () => api("/api/oil-changes").then(setOil).catch(() => {}),
+    []
+  );
 
   useEffect(() => {
     api("/api/messages").then(setMessages).catch(() => {});
+    api("/api/integrations").then(setIntegrations).catch(() => {});
     refreshAgents();
+    refreshOil();
 
     const proto = location.protocol === "https:" ? "wss" : "ws";
     const ws = new WebSocket(`${proto}://${location.host}/ws`);
@@ -26,9 +34,10 @@ function useOrchestrator() {
       const data = JSON.parse(ev.data);
       if (data.type === "message") {
         setMessages((prev) => [...prev, data.message]);
-      } else if (data.type === "heartbeat" || data.type === "cron") {
+      } else if (data.type === "heartbeat" || data.type === "cron" || data.type === "oil") {
         setEvents((prev) => [data, ...prev].slice(0, 40));
         refreshAgents();
+        if (data.type === "oil" || data.type === "cron") refreshOil();
       }
     };
     const poll = setInterval(refreshAgents, 5000);
@@ -36,9 +45,9 @@ function useOrchestrator() {
       ws.close();
       clearInterval(poll);
     };
-  }, [refreshAgents]);
+  }, [refreshAgents, refreshOil]);
 
-  return { agents, messages, events, connected, refreshAgents };
+  return { agents, messages, events, oil, integrations, connected, refreshAgents, refreshOil };
 }
 
 function AgentCard({ agent, onRun }) {
@@ -62,7 +71,7 @@ function AgentCard({ agent, onRun }) {
 }
 
 export default function App() {
-  const { agents, messages, events, connected, refreshAgents } = useOrchestrator();
+  const { agents, messages, events, oil, integrations, connected, refreshAgents, refreshOil } = useOrchestrator();
   const [text, setText] = useState("");
   const [target, setTarget] = useState("");
   const [error, setError] = useState("");
@@ -90,6 +99,17 @@ export default function App() {
   const runAgent = async (id) => {
     await api(`/api/agents/${id}/run`, { method: "POST" }).catch(() => {});
     refreshAgents();
+    refreshOil();
+  };
+
+  const runOil = async () => {
+    setError("");
+    try {
+      await api("/api/oil-changes/run", { method: "POST" });
+      refreshOil();
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   return (
@@ -157,6 +177,31 @@ export default function App() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section className="panel oil-panel">
+          <h2>Oil changes</h2>
+          <div className="oil-head">
+            <p className="oil-summary">
+              {oil?.payload?.summary || oil?.message || "No due-list yet. This console owns the job GrokBot used to email."}
+            </p>
+            <button onClick={runOil}>Run due-list</button>
+          </div>
+          {integrations && (
+            <div className="oil-integrations" title="Light API clients — no Chrome, no googleapis">
+              <span className={integrations.sheets?.configured ? "on" : "off"}>Sheets</span>
+              <span className={integrations.onestep?.configured ? "on" : "off"}>OneStep</span>
+              <span className="off">eFleets export</span>
+            </div>
+          )}
+          {oil?.payload?.counts && (
+            <div className="oil-counts">
+              <span>{oil.payload.counts.overdue} overdue</span>
+              <span>{oil.payload.counts.suspect} suspect</span>
+              <span>{oil.payload.counts.backward} backward</span>
+            </div>
+          )}
+          <pre className="oil-report">{oil?.report || ""}</pre>
         </section>
       </main>
     </div>

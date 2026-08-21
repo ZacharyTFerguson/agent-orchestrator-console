@@ -56,8 +56,54 @@ body {
   flex: 1;
   display: grid;
   grid-template-columns: 1.1fr 1.3fr 1fr;
+  grid-template-rows: auto auto;
   gap: 18px;
   padding: 18px 24px;
+}
+
+.oil-panel { grid-column: 1 / -1; min-height: 220px; }
+.oil-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.oil-summary { margin: 0; color: var(--muted); font-size: 13px; }
+.oil-counts {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.oil-integrations {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+.oil-integrations span {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.oil-integrations span.on { color: var(--alive); border-color: rgba(56, 211, 159, 0.45); }
+.oil-integrations span.off { color: var(--muted); }
+.oil-report {
+  margin: 0;
+  flex: 1;
+  overflow: auto;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  color: var(--text);
 }
 
 .panel {
