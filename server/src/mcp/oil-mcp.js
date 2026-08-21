@@ -111,6 +111,14 @@ function textResult(obj, isError = false) {
 }
 
 export async function callTool(name, args = {}, { env = process.env, fetchImpl = fetch } = {}) {
+  try {
+    return await invokeTool(name, args, { env, fetchImpl });
+  } catch (err) {
+    return textResult({ error: err.message }, true);
+  }
+}
+
+async function invokeTool(name, args, { env, fetchImpl }) {
   switch (name) {
     case "oil_status":
       return textResult({
