@@ -13,6 +13,7 @@ import {
   looksLikeOilChangeRequest,
   parseFleetCsv,
   parseMiles,
+  resolveWorkingSheet,
   reviewDueList,
 } from "../src/oil-changes.js";
 import { runOilDueListJob } from "../src/oil-change-job.js";
@@ -111,4 +112,15 @@ test("oil-change chat detector", () => {
 
 test("interval stays at GrokBot's 5K", () => {
   assert.equal(OIL_INTERVAL_MILES, 5000);
+});
+
+test("working sheet environment is the Automations Copy gid 733911326", () => {
+  const sheet = resolveWorkingSheet();
+  assert.equal(sheet.id, "1e0AhA0LTLru0_o-WZsO81eL7-ekfbxV-VTDvaitGHHQ");
+  assert.equal(sheet.gid, "733911326");
+  assert.equal(sheet.tab, "eFleets All Cars sorted");
+  assert.match(sheet.url, /gid=733911326/);
+  const override = resolveWorkingSheet({ OIL_CHANGE_SHEET_ID: "other", OIL_CHANGE_SHEET_GID: "1" });
+  assert.equal(override.id, "other");
+  assert.equal(override.gid, "1");
 });

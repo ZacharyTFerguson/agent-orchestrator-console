@@ -9,7 +9,10 @@
         "GOOGLE_SHEETS_API_KEY": "${env:GOOGLE_SHEETS_API_KEY}",
         "ONESTEP_API_KEY": "${env:ONESTEP_API_KEY}",
         "ONESTEP_BEARER_TOKEN": "${env:ONESTEP_BEARER_TOKEN}",
-        "OIL_CHANGE_CSV_PATH": "${env:OIL_CHANGE_CSV_PATH}"
+        "OIL_CHANGE_CSV_PATH": "${env:OIL_CHANGE_CSV_PATH}",
+        "OIL_CHANGE_SHEET_ID": "${env:OIL_CHANGE_SHEET_ID}",
+        "OIL_CHANGE_SHEET_GID": "${env:OIL_CHANGE_SHEET_GID}",
+        "OIL_CHANGE_SHEET_TAB": "${env:OIL_CHANGE_SHEET_TAB}"
       }
     }
   }

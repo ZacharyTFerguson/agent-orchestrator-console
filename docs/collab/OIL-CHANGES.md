@@ -8,7 +8,7 @@ GrokBot (grok.com) used to own the PDI oil-change loop: a 6:00 AM ET Updater, an
 |-----|---------------|-----------------|
 | Overdue list (`CHANGE OIL AFTER 5K`) | Internet bot emailed the Automations tab | `oil-updater` cron `0 6 * * *`, `POST /api/oil-changes/run`, chat that asks for the list |
 | Review | Oil Change Reviewer blocked fake green | `oil-reviewer` refuses overdue rows that are suspect jumps or backward odometers |
-| Working sheet | Automations Copy `1e0AhA0LTLru0_o-WZsO81eL7-ekfbxV-VTDvaitGHHQ` gid `733911326` | Same sheet. Prefer Sheets API (`GOOGLE_SHEETS_ACCESS_TOKEN`) or a CSV export (`OIL_CHANGE_CSV_PATH` / `data/efleets-all-cars.csv`) |
+| Working sheet | [Automations Copy](https://docs.google.com/spreadsheets/d/1e0AhA0LTLru0_o-WZsO81eL7-ekfbxV-VTDvaitGHHQ/edit?gid=733911326#gid=733911326) `1e0AhA0LTLru0_o-WZsO81eL7-ekfbxV-VTDvaitGHHQ` gid `733911326` | Pinned in `config/oil-sheet.json`. Prefer Sheets API (`GOOGLE_SHEETS_ACCESS_TOKEN`) or a CSV export (`OIL_CHANGE_CSV_PATH` / `data/efleets-all-cars.csv`) |
 
 Rules copied from GrokBot's Aug 18–19 emails:
 

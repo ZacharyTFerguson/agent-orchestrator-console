@@ -3,11 +3,10 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-  WORKING_SHEET_GID,
-  WORKING_SHEET_ID,
   buildDueList,
   formatDueListReport,
   parseFleetCsv,
+  resolveWorkingSheet,
   reviewDueList,
   summarizeDueList,
 } from "./oil-changes.js";
@@ -31,12 +30,18 @@ export function loadOilChangeCsv(csvPath = resolveOilChangeCsvPath()) {
 }
 
 export async function loadOilChangeFromSheets({
-  spreadsheetId = WORKING_SHEET_ID,
-  range = `'eFleets All Cars sorted'!A1:T`,
+  spreadsheetId,
+  range,
   env = process.env,
   fetchImpl = fetch,
 } = {}) {
-  const res = await getSheetValues({ spreadsheetId, range, env, fetchImpl });
+  const sheet = resolveWorkingSheet(env);
+  const res = await getSheetValues({
+    spreadsheetId: spreadsheetId || sheet.id,
+    range: range || sheet.range,
+    env,
+    fetchImpl,
+  });
   if (!res.ok) {
     throw new Error(`Sheets values.get failed (${res.status})`);
   }
@@ -52,7 +57,8 @@ export async function runOilDueListJob({ csvPath, csvText, env = process.env, fe
     sourcePath = csvPath;
     text = loadOilChangeCsv(csvPath);
   } else if (sheetsConfigured(env)) {
-    sourcePath = `sheets:${WORKING_SHEET_ID}#${WORKING_SHEET_GID}`;
+    const sheet = resolveWorkingSheet(env);
+    sourcePath = `sheets:${sheet.id}#${sheet.gid}`;
     text = await loadOilChangeFromSheets({ env, fetchImpl });
   } else {
     sourcePath = resolveOilChangeCsvPath(env);
@@ -65,6 +71,7 @@ export async function runOilDueListJob({ csvPath, csvText, env = process.env, fe
   return {
     sourcePath,
     usingSample: sourcePath === SAMPLE_CSV,
+    workingSheet: resolveWorkingSheet(env),
     generatedAt: new Date().toISOString(),
     summary: summarizeDueList(due),
     report,

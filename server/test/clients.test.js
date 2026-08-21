@@ -184,6 +184,8 @@ test("integrationStatus reports booleans only", () => {
     GOOGLE_SHEETS_ACCESS_TOKEN: "tok",
     ONESTEP_API_KEY: "secret-key",
   });
+  assert.equal(status.workingSheet.id, WORKING_SHEET_ID);
+  assert.equal(status.workingSheet.gid, "733911326");
   assert.equal(status.sheets.configured, true);
   assert.equal(status.onestep.configured, true);
   assert.equal(status.efleets.configured, false);

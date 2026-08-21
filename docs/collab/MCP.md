@@ -4,6 +4,12 @@ This repo ships a **stdio** MCP named `oil-fleet`. It wraps the native-fetch cli
 
 This Cloud Agent run already has **Google Drive**, **Gmail**, and **ClickUp**. Drive can export the working sheet as CSV. Drive cannot write cells. `oil-fleet` is the cell-write / OneStep / due-list tool layer.
 
+The environment’s working spreadsheet is pinned in `config/oil-sheet.json`:
+
+https://docs.google.com/spreadsheets/d/1e0AhA0LTLru0_o-WZsO81eL7-ekfbxV-VTDvaitGHHQ/edit?gid=733911326#gid=733911326
+
+(`Automations Copy` → **eFleets All Cars sorted**). Override with `OIL_CHANGE_SHEET_ID` / `OIL_CHANGE_SHEET_GID` / `OIL_CHANGE_SHEET_TAB` only if you intentionally switch copies.
+
 Cursor does **not** auto-load `.cursor/mcp.json` into Cloud Agents. You attach the same server in the Cloud Agents MCP dropdown. HTTP MCP is Cursor’s preferred Cloud transport (credentials stay off the VM). This server is stdio because we are not hosting a public HTTP endpoint.
 
 ## Tools

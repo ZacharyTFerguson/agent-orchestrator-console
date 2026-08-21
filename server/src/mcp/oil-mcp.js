@@ -14,7 +14,7 @@ import {
 } from "../clients/onestep.js";
 import { eFleetsCapability } from "../clients/efleets.js";
 import { runOilDueListJob } from "../oil-change-job.js";
-import { ORIGINAL_TEMPLATE_ID, WORKING_SHEET_GID, WORKING_SHEET_ID } from "../oil-changes.js";
+import { ORIGINAL_TEMPLATE_ID, resolveWorkingSheet } from "../oil-changes.js";
 
 export const SERVER_INFO = { name: "oil-fleet", version: "0.1.0" };
 export const PROTOCOL_VERSION = "2024-11-05";
@@ -123,7 +123,7 @@ async function invokeTool(name, args, { env, fetchImpl }) {
     case "oil_status":
       return textResult({
         ...integrationStatus(env),
-        workingSheet: { id: WORKING_SHEET_ID, gid: WORKING_SHEET_GID },
+        workingSheet: resolveWorkingSheet(env),
         originalTemplateId: ORIGINAL_TEMPLATE_ID,
         efleets: { ...eFleetsCapability(), configured: false },
       });
@@ -142,7 +142,7 @@ async function invokeTool(name, args, { env, fetchImpl }) {
         return textResult({ error: "Sheets not configured. Set GOOGLE_SHEETS_ACCESS_TOKEN or GOOGLE_SHEETS_API_KEY." }, true);
       }
       const res = await getSheetValues({
-        spreadsheetId: args.spreadsheetId || WORKING_SHEET_ID,
+        spreadsheetId: args.spreadsheetId || resolveWorkingSheet(env).id,
         range: args.range,
         env,
         fetchImpl,
@@ -151,7 +151,7 @@ async function invokeTool(name, args, { env, fetchImpl }) {
     }
     case "sheets_update_values": {
       const res = await updateSheetValues({
-        spreadsheetId: args.spreadsheetId || WORKING_SHEET_ID,
+        spreadsheetId: args.spreadsheetId || resolveWorkingSheet(env).id,
         range: args.range,
         values: args.values,
         env,

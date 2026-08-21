@@ -81,6 +81,8 @@ npm test               # node:test suite for the orchestrator core
 | `DB_PATH` | `data/orchestrator.db` | SQLite file (`:memory:` for tests) |
 | `ORCHESTRATOR_CONFIG` | `config/orchestrator.config.json` | Agent config path |
 | `OIL_CHANGE_CSV_PATH` | `data/efleets-all-cars.csv` or sample fixture | Export of Automations **eFleets All Cars sorted**. Do not commit the live fleet file. |
+| `OIL_CHANGE_SHEET_ID` | `1e0AhA0LTLru0_o-WZsO81eL7-ekfbxV-VTDvaitGHHQ` | Working Automations Copy spreadsheet. See `config/oil-sheet.json`. |
+| `OIL_CHANGE_SHEET_GID` | `733911326` | Tab **eFleets All Cars sorted**. |
 | `GOOGLE_SHEETS_ACCESS_TOKEN` | unset | Sheets API v4 Bearer token (read/write). When set, the due-list loads the working tab over HTTPS. |
 | `GOOGLE_SHEETS_API_KEY` | unset | Sheets API key for public read-only sheets. |
 | `ONESTEP_API_KEY` | unset | OneStep public `api-key`. Never commit or log it. |

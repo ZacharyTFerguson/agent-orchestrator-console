@@ -8,11 +8,36 @@
  * Does not log into eFleets or OneStep.
  */
 
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const OIL_SHEET = JSON.parse(
+  readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../../config/oil-sheet.json"), "utf8")
+);
+
 export const OIL_INTERVAL_MILES = 5000;
 export const JUMP_SUSPECT_MILES = 30_000;
-export const WORKING_SHEET_ID = "1e0AhA0LTLru0_o-WZsO81eL7-ekfbxV-VTDvaitGHHQ";
-export const WORKING_SHEET_GID = "733911326";
-export const ORIGINAL_TEMPLATE_ID = "1eaz_NlsJ9mohfjR3l61piTQOwuMAjVfqDsC0o4Kftss";
+export const WORKING_SHEET_ID = OIL_SHEET.spreadsheetId;
+export const WORKING_SHEET_GID = OIL_SHEET.gid;
+export const WORKING_SHEET_TAB = OIL_SHEET.tab;
+export const WORKING_SHEET_URL = OIL_SHEET.url;
+export const ORIGINAL_TEMPLATE_ID = OIL_SHEET.originalTemplateId;
+
+/** This Cloud Agent environment's working oil sheet (Automations Copy). */
+export function resolveWorkingSheet(env = process.env) {
+  const id = env.OIL_CHANGE_SHEET_ID || WORKING_SHEET_ID;
+  const gid = env.OIL_CHANGE_SHEET_GID || WORKING_SHEET_GID;
+  const tab = env.OIL_CHANGE_SHEET_TAB || WORKING_SHEET_TAB;
+  return {
+    id,
+    gid,
+    tab,
+    title: OIL_SHEET.title,
+    url: `https://docs.google.com/spreadsheets/d/${id}/edit?gid=${gid}#gid=${gid}`,
+    range: `'${tab}'!A1:T`,
+  };
+}
 
 export function parseMiles(value) {
   if (value == null) return null;
@@ -257,7 +282,7 @@ export function formatDueListReport(due, { sourceLabel } = {}) {
 
   lines.push("");
   lines.push(
-    `Source: https://docs.google.com/spreadsheets/d/${WORKING_SHEET_ID}/edit?gid=${WORKING_SHEET_GID}`
+    `Source: ${resolveWorkingSheet().url}`
   );
   lines.push("Owner: Cursor oil-change agents (took over from GrokBot).");
   return lines.join("\n");
