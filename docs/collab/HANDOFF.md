@@ -97,8 +97,8 @@ Composio Connect URL `https://connect.composio.dev/mcp` is live streamable HTTP.
 
 ## Next agent — first actions
 
-1. If the dated copy still needs the 90-day CSV apply: `npm run oil-sheet-update` locally, then Composio `GOOGLESHEETS_UPDATE_VALUES_BATCH` on **copy** `1F3KrNhD8xDvIlyumigiQzVkK_C9FaDKOVdJaCX_yASE` only. Chunk ~40 ranges. `USER_ENTERED`. Not I/J. Not the live sheet. Not the original template.
-2. Report due-list **counts** only. Do not paste unit/VIN/plate rows.
+1. Dated copy **already has** the 2026-08-21 90-day eFleets CSV apply. Counts: 27 overdue, 5 suspect, 22 backward, 18 incomplete (was 30 / 5 / 14 / 19). Do not paste unit rows.
+2. Do not retarget `config/oil-sheet.json` unless the user says that copy is now the working sheet.
 3. Do not start an environment snapshot or draft build unless the user asks.
 4. eFleets portal login and OneStep History recapture stay HOLD.
 
