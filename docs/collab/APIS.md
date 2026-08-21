@@ -39,7 +39,7 @@ Auth for **protected** keys: do not send the API key as-is. Sign a fresh RS256 J
 
 Legacy unprotected keys may still use the `api-key` query param. Optional `ONESTEP_BEARER_TOKEN` is a pre-signed JWT, not the raw key.
 
-**Last Reading** is Enterprise odometer at a known second **plus** OneStep distance since that second (`composeLastReading`). OneStep’s own odometer / Calculated Mileage is never used (`extractDistance` rejects those fields).
+**Last Reading** is Enterprise odometer at a known second **plus** OneStep distance since that second (`composeLastReading`). The known second is the oil-shop History stop, not midnight on the RO date. Skill: `.cursor/skills/pull-miles-since-oil-shop/SKILL.md`. OneStep’s own odometer / Calculated Mileage is never used (`extractDistance` rejects those fields).
 
 Set `ONESTEP_API_KEY` and `ONESTEP_PRIVATE_KEY` as environment secrets when you want a live pull. Cloud Agents may inject `OneStepAPIKEY` / `OneStepAPIKEYTobeSigned`; the client maps those by PEM shape. Do not paste the key, PEM, or JWT into chat, git, or logs.
 

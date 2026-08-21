@@ -52,7 +52,7 @@ Live working sheet stays pinned. Writes from the 90-day eFleets CSVs go to a **c
 - oil-fleet stdio MCP: `server/src/mcp/oil-mcp.js` · tools `oil_status`, `oil_due_list`, `sheets_get_values`, `sheets_update_values`, `onestep_*`, `compose_last_reading`
 - IDE config: `.cursor/mcp.json` lists `composio` → `https://connect.composio.dev/mcp` and `oil-fleet` stdio
 - Docs: `docs/collab/OIL-CHANGES.md`, `APIS.md`, `MCP.md`, `EFLEETS-UPDATE.md`
-- Tests: `npm test` last green at **49/49** (re-run after code changes)
+- Tests: `npm test` last green at **52/52** (re-run after code changes)
 - eFleets CSV → copy: `server/src/efleets-exports.js`, `oil-sheet-update.js`, `npm run oil-sheet-update`
 
 ## Identities (do not paste tokens)
@@ -101,10 +101,11 @@ Composio Connect URL `https://connect.composio.dev/mcp` is live streamable HTTP.
 1. Dated copy **already has** the 2026-08-21 90-day eFleets CSV apply. Counts: 27 overdue, 5 suspect, 22 backward, 18 incomplete (was 30 / 5 / 14 / 19). Do not paste unit rows.
 2. Do not retarget `config/oil-sheet.json` unless the user says that copy is now the working sheet.
 3. Do not start an environment snapshot or draft build unless the user asks.
-4. eFleets portal login stays HOLD. OneStep JWT wrap + `npm run oil-onestep-probe` are in the client. Cloud secret names `OneStepAPIKEY` / `OneStepAPIKEYTobeSigned` map by PEM shape. Miles-since recapture stays HOLD. Do not paste the key, PEM, or a signed JWT.
+4. eFleets portal login stays HOLD. OneStep JWT wrap + `npm run oil-onestep-probe` are in the client. Cloud secret names `OneStepAPIKEY` / `OneStepAPIKEYTobeSigned` map by PEM shape. Shop-stop miles: `.cursor/skills/pull-miles-since-oil-shop/SKILL.md`. Do not paste the key, PEM, or a signed JWT.
 
 ## Pointers
 
 - Due-list rules and cron: `docs/collab/OIL-CHANGES.md`
 - Vendor APIs: `docs/collab/APIS.md`
 - MCP attach: `docs/collab/MCP.md`
+- Last Reading from shop GPS stop: `.cursor/skills/pull-miles-since-oil-shop/SKILL.md`
