@@ -221,7 +221,7 @@ test("oil-onestep-probe reports status and counts only", async () => {
   const pem = generateKeyPairSync("rsa", { modulusLength: 2048 }).privateKey.export({ type: "pkcs8", format: "pem" });
   const fetchImpl = async (url) => {
     if (String(url).includes("device-info")) return jsonResponse(200, { devices: [{ id: 1 }, { id: 2 }] });
-    return jsonResponse(403, { message: "forbidden" });
+    return jsonResponse(200, { result_list: [{ id: 1 }] });
   };
   const report = await probeOneStep({
     env: { OneStepAPIKEY: pem, OneStepAPIKEYTobeSigned: "secret-key" },
@@ -232,8 +232,9 @@ test("oil-onestep-probe reports status and counts only", async () => {
   assert.equal(report.privateKey, true);
   assert.equal(report.jwtMode, true);
   assert.equal(report.results[0].deviceCount, 2);
-  assert.equal(report.results[1].status, 403);
-  assert.equal(report.exitCode, 1);
+  assert.equal(report.results[1].status, 200);
+  assert.equal(report.results[1].deviceCount, 1);
+  assert.equal(report.exitCode, 0);
   assert.equal(printed.includes("secret-key"), false);
   assert.equal(printed.includes("BEGIN"), false);
 });

@@ -14,6 +14,7 @@ import {
 function countDevices(payload) {
   if (!payload) return 0;
   if (Array.isArray(payload)) return payload.length;
+  if (Array.isArray(payload.result_list)) return payload.result_list.length;
   if (Array.isArray(payload.devices)) return payload.devices.length;
   if (Array.isArray(payload.result)) return payload.result.length;
   if (Array.isArray(payload.data)) return payload.data.length;
