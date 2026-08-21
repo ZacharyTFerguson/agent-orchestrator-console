@@ -49,6 +49,16 @@ Existing Planner / Researcher / Executor stay. Oil specialists:
 
 This pass is **not** cron. Re-run when the user drops new eFleets CSVs.
 
-## After a good copy
+## 2026-08-21 apply (dated copy only)
+
+| | Before | After |
+| --- | --- | --- |
+| Vehicles | 205 | 205 |
+| Overdue | 30 | 27 |
+| Suspect | 5 | 5 |
+| Backward | 14 | 22 |
+| Incomplete | 19 | 18 |
+
+Writes: 19 last-oil (E/F), 133 last-reading (G/H), 56 unchanged. Skipped: 30 backward fuel, 2 jumps > 30k, 13 older fuel. Unmatched in the 90-day window: 105 oil, 9 fuel. 149 A1 ranges in 4 Composio batches, **304 cells**, I/J left as formulas. Live working sheet was not written (Drive `modifiedTime` stayed `2026-08-21T15:43:47Z`).
 
 Do **not** retarget `config/oil-sheet.json` unless the user says the dated copy is now the working sheet.
