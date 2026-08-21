@@ -16,7 +16,8 @@
     "test": "npm --workspace server test",
     "oil-changes": "node server/src/oil-change-cli.js",
     "oil-sheet-update": "node server/src/oil-sheet-update-cli.js",
-    "oil-mcp": "node server/src/mcp/oil-mcp.js"
+    "oil-mcp": "node server/src/mcp/oil-mcp.js",
+    "oil-onestep-probe": "node server/src/oil-onestep-probe-cli.js"
   },
   "engines": {
     "node": ">=20"
