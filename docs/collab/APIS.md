@@ -41,7 +41,7 @@ Legacy unprotected keys may still use the `api-key` query param. Optional `ONEST
 
 **Last Reading** is Enterprise odometer at a known second **plus** OneStep distance since that second (`composeLastReading`). OneStep’s own odometer / Calculated Mileage is never used (`extractDistance` rejects those fields).
 
-Set `ONESTEP_API_KEY` and `ONESTEP_PRIVATE_KEY` as environment secrets. Do not paste the key, PEM, or JWT into chat, git, or logs.
+Set `ONESTEP_API_KEY` and `ONESTEP_PRIVATE_KEY` as environment secrets when you want a live pull. This Cloud run **skipped** those secrets (2026-08-21); miles-since stays HOLD. Do not paste the key, PEM, or JWT into chat, git, or logs.
 
 ## Enterprise eFleets
 

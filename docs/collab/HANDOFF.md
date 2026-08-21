@@ -106,7 +106,7 @@ VA 31 last reading is **held** at `12949` / `8/11` (card nickname still stamped 
 1. Dated copy **already has** the 2026-08-21 90-day eFleets CSV apply plus the VA summary sync / VA 31 hold. Sorted-tab counts after the CSV apply: 27 overdue, 5 suspect, 22 backward, 18 incomplete (was 30 / 5 / 14 / 19). Do not paste unit rows.
 2. Do not retarget `config/oil-sheet.json` unless the user says that copy is now the working sheet.
 3. Do not start an environment snapshot or draft build unless the user asks.
-4. eFleets portal login stays HOLD. OneStep protected keys need `ONESTEP_API_KEY` + `ONESTEP_PRIVATE_KEY` on a **new** agent (RS256 JWT wrap). This run has neither injected. Do not paste the key or PEM into chat.
+4. eFleets portal login stays HOLD. OneStep secrets were **skipped** on 2026-08-21. Do not re-prompt. Miles-since stays HOLD. JWT wrap is in the client for later. Do not paste the key, PEM, or a signed JWT into chat.
 
 ## Pointers
 
