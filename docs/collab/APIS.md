@@ -22,7 +22,7 @@ Never write the original PDI template `1eaz_NlsJ9mohfjR3l61piTQOwuMAjVfqDsC0o4Kf
 
 Set `GOOGLE_SHEETS_ACCESS_TOKEN` (read/write) or `GOOGLE_SHEETS_API_KEY` (public read). When a token is set, `runOilDueListJob` loads the tab over this API instead of a CSV file.
 
-Drive MCP can export the sheet as CSV. It cannot write cells. Cell writes go through this client.
+Drive MCP can export the sheet as CSV. It cannot write cells. Cell writes go through this client **or** Composio `GOOGLESHEETS_UPDATE_VALUES_BATCH` (this Cloud run: `zachary.ferguson.automations@gmail.com`, 60 reads/writes per minute). One-shot eFleets CSV updates target the dated copy in `config/oil-update-copy.json`, not the live working sheet. See [EFLEETS-UPDATE.md](EFLEETS-UPDATE.md).
 
 ## OneStepGPS public API
 
@@ -31,14 +31,17 @@ Hosted apidoc is behind the portal (`https://track.onestepgps.com`). This repo o
 | Method | Path | Use |
 |---|---|---|
 | GET | `/v3/api/public/device` | Device list |
+| GET | `/v3/api/public/device-info` | Device info (current portal example) |
 | GET | `/v3/api/public/route/drive-stop` | Miles since a timestamp (this account may 403) |
 | GET | `/v3/api/public/report-generated/export/:id` | Generated report file (often empty 200) |
 
-Auth: `api-key` query param, optional `ONESTEP_BEARER_TOKEN`. Client: `server/src/clients/onestep.js`.
+Auth for **protected** keys: do not send the API key as-is. Sign a fresh RS256 JWT (`access_token` = API key, `exp` ≤ 5 minutes) with `ONESTEP_PRIVATE_KEY`, then `Authorization: Bearer <signed-token>`. Client: `server/src/clients/onestep.js`. Probe: `npm run oil-onestep-probe` (status/counts only).
+
+Legacy unprotected keys may still use the `api-key` query param. Optional `ONESTEP_BEARER_TOKEN` is a pre-signed JWT, not the raw key.
 
 **Last Reading** is Enterprise odometer at a known second **plus** OneStep distance since that second (`composeLastReading`). OneStep’s own odometer / Calculated Mileage is never used (`extractDistance` rejects those fields).
 
-Set `ONESTEP_API_KEY` if you already have one. Do not paste the key into chat, git, or logs.
+Set `ONESTEP_API_KEY` and `ONESTEP_PRIVATE_KEY` as environment secrets when you want a live pull. This Cloud run **skipped** those secrets (2026-08-21); miles-since stays HOLD. Do not paste the key, PEM, or JWT into chat, git, or logs.
 
 ## Enterprise eFleets
 

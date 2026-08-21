@@ -59,6 +59,7 @@ test("oil_status reports booleans only", async () => {
   const body = JSON.parse(result.content[0].text);
   assert.equal(body.sheets.configured, true);
   assert.equal(body.onestep.configured, true);
+  assert.equal(body.onestep.jwt, false);
   assert.equal(body.efleets.publicApi, null);
   assert.equal(result.content[0].text.includes("secret-key"), false);
   assert.equal(result.content[0].text.includes("tok"), false);
