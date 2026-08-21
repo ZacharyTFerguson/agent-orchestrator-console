@@ -31,6 +31,8 @@ eFleets company `583424`, portal `https://login.efleets.com/fleetweb`. No public
 
 Latest known due-list match (GrokBot Aug 19 / later Drive export): **30 overdue, 5 suspect, 14 backward**. Export size ~201 vehicles, ~15 incomplete. Recompute; do not paste unit rows.
 
+Working-sheet card homes written 2026-08-21 (not I/J): PA21 last oil 129,622 / last reading 130,209; PA23 last reading 65,528; PA9 swapped 129k reading cleared; PA24 own 50,801 kept; VA10 last oil left at 272,375 (do not copy dated-copy 278,374). Physical WEX moves still need a human.
+
 ## Dated eFleets-update copy (this pass)
 
 Live working sheet stays pinned. Writes from the 90-day eFleets CSVs go to a **copy**:
