@@ -10,7 +10,25 @@ https://docs.google.com/spreadsheets/d/1e0AhA0LTLru0_o-WZsO81eL7-ekfbxV-VTDvaitG
 
 (`Automations Copy` → **eFleets All Cars sorted**). Override with `OIL_CHANGE_SHEET_ID` / `OIL_CHANGE_SHEET_GID` / `OIL_CHANGE_SHEET_TAB` only if you intentionally switch copies.
 
-Cursor does **not** auto-load `.cursor/mcp.json` into Cloud Agents. You attach the same server in the Cloud Agents MCP dropdown. HTTP MCP is Cursor’s preferred Cloud transport (credentials stay off the VM). This server is stdio because we are not hosting a public HTTP endpoint.
+Cursor does **not** auto-load `.cursor/mcp.json` into Cloud Agents. You attach servers in the Cloud Agents MCP list (`+` → **MCP Servers** on this run). HTTP MCP is Cursor’s preferred Cloud transport (credentials stay off the VM). `oil-fleet` is stdio because we are not hosting a public HTTP endpoint.
+
+## Composio Connect (Sheets cell access)
+
+Hosted MCP: [https://connect.composio.dev/mcp](https://connect.composio.dev/mcp)
+
+This is streamable HTTP. Unauthenticated calls return `401` and advertise OAuth at `https://login.composio.dev` (or an `x-consumer-api-key` header). The Cursor catalog **Composio** row on this run is a different attachment; it stayed `needsAuth` and is not this URL.
+
+### Cloud Agents (this run)
+
+1. Open [this run](https://cursor.com/agents/bc-4087ff70-b35a-4807-a261-fda00acbea59).
+2. Click **`+`** left of the follow-up box → **MCP Servers** → **Add MCP**.
+3. Type **HTTP**. URL exactly `https://connect.composio.dev/mcp`. Name `composio`.
+4. Complete Composio login in the browser. When it asks to connect Google Sheets, use `zachary.ferguson.automations@gmail.com` or `zachary.ferguson.authority@gmail.com`.
+5. Stay on this run and tell the agent Composio Connect is attached.
+
+Do not paste API keys into chat. Optional Desktop header: `x-consumer-api-key` from [dashboard.composio.dev](https://dashboard.composio.dev) → **AI Clients**. Cloud can use the OAuth challenge instead of a key.
+
+`.cursor/mcp.json` already lists this URL for the IDE. Cloud still needs the **Add MCP** step above.
 
 ## Tools
 

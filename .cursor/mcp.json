@@ -1,5 +1,8 @@
 {
   "mcpServers": {
+    "composio": {
+      "url": "https://connect.composio.dev/mcp"
+    },
     "oil-fleet": {
       "type": "stdio",
       "command": "node",
