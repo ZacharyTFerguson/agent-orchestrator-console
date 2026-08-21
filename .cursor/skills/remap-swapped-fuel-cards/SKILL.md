@@ -19,7 +19,9 @@ Pinned homes: `config/oil-card-homes.json`. Last 5 of the card only. No VIN, pla
 | `31757` | PA9 `285JCH` | PA21 `285JCR` | PA9's own `31203` |
 | `31781` | PA24 `285JCN` | PA23 `285JCP` | PA24's own `32490` |
 
-Do **not** treat CT2↔CT3 or WNY-9→WNY12 as proven moves: PCVN still matches the host nickname; odometer is the suspect.
+Do **not** treat CT2↔CT3 or WNY-9→WNY12 as proven moves: PCVN still matches the host nickname; odometer is the suspect. OneStep 8/17 and 8/7: CT2 drove while CT3 parked. OneStep 8/17 and 8/6: WNY-9 parked (GPS alive) while WNY12 drove — PA24-style GPS but WEX still says WNY9, so suspect only.
+
+Do **not** send card `31104` (PCVN MD23, posts on MD32) to MD23: miles match MD32; OneStep 8/16 MD32 drove / MD23 parked.
 
 ## Sheet writes (working Automations Copy)
 

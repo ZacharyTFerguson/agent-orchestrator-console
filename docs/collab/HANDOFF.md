@@ -33,6 +33,8 @@ Latest known due-list match (GrokBot Aug 19 / later Drive export): **30 overdue,
 
 Working-sheet card homes written 2026-08-21 (not I/J): PA21 last oil 129,622 / last reading 130,209; PA23 last reading 65,528; PA9 swapped 129k reading cleared; PA24 own 50,801 kept; VA10 last oil left at 272,375 (do not copy dated-copy 278,374). Physical WEX moves still need a human.
 
+As-is inventory tab **Current Card Assignments** gid `770421133` — 219 WEX last-5 cards from DETAILS 90-day + Utilization (2026-08-21). Question-for-Rich tab **Suspected cards and possible homes** gid `872461432` — Proven: `31757` PA9→PA21, `31781` PA24→PA23. Do not pin CT2/CT3, WNY-9/WNY12, or MD32/MD23 leftover `31104`.
+
 ## Dated eFleets-update copy (this pass)
 
 Live working sheet stays pinned. Writes from the 90-day eFleets CSVs go to a **copy**:
