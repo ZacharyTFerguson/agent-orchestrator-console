@@ -19,7 +19,8 @@ Rules copied from GrokBot's Aug 18–19 emails:
 - Not due when miles since last oil **> 30,000** (incompatible sources; GrokBot called these "readings that look wrong").
 - Incomplete rows (missing last oil or last reading) are skipped.
 - Never edit the original PDI template `1eaz_NlsJ9mohfjR3l61piTQOwuMAjVfqDsC0o4Kftss`.
-- Never write sheet columns I/J (formulas).
+- Never write sheet columns I/J (formulas). On **Oil Change Summary**, H/I are the same remaining/due formulas — write D–G only.
+- The dashboard tab (gid `1615250816`) is an OBJECT canvas. Sync the **Oil Change Summary** grid behind it; do not try to `values.update` the canvas.
 
 ## What still needs a signed-in workstation
 

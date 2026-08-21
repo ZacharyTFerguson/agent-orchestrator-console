@@ -61,4 +61,22 @@ This pass is **not** cron. Re-run when the user drops new eFleets CSVs.
 
 Writes: 19 last-oil (E/F), 133 last-reading (G/H), 56 unchanged. Skipped: 30 backward fuel, 2 jumps > 30k, 13 older fuel. Unmatched in the 90-day window: 105 oil, 9 fuel. 149 A1 ranges in 4 Composio batches, **304 cells**, I/J left as formulas. Live working sheet was not written (Drive `modifiedTime` stayed `2026-08-21T15:43:47Z`).
 
+## 2026-08-21 dashboard / VA corrections (dated copy only)
+
+The tab at gid `1615250816` (**PDI Oil Change Tracker & Fleet Automation Dashboard**) is an **OBJECT** canvas. Sheets `values.get` cannot read or write it. The ampersand in the title also breaks A1 ranges. Correct the grids it charts:
+
+| Tab | What to write |
+| --- | --- |
+| **Oil Change Summary** | VA ops list. Write **D–G** only. H/I are `=D+5000-F` / `=D+5000`. Do not write plates. |
+| **eFleets All Cars sorted** | Fleet source for those miles. Write E–H only. Never I/J. |
+| **Suspected cards and possible homes** | Append pairing notes. Do not invent card numbers. |
+
+Applied 2026-08-21:
+
+- Synced 32 of 35 VA summary rows D–G from sorted E–H (name match `VA1`↔`VA 1`, `va33`↔`VA 33`, `VA35`↔`VA_35`). Left 3 unchanged (same miles, or a newer summary date for the same reading).
+- **Held VA 31 last reading** at `12949` / `8/11/2026` on both the summary and sorted G/H. Reverted the 90-day fuel write (`13689` / `8/18`) — that punch is on a card still stamped **VA2** and is not proven as this unit’s dash.
+- Appended **Suspected cards** row for VA 31 (no card number). Summary notes cell J35 points at that row.
+- 6 VA summary rows are now backward (newer completed oil RO, no later clean fuel). That matches the sorted-tab apply.
+- 139 cells in one Composio batch. Live working sheet `modifiedTime` still `2026-08-21T15:43:47Z`.
+
 Do **not** retarget `config/oil-sheet.json` unless the user says the dated copy is now the working sheet.

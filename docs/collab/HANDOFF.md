@@ -7,8 +7,8 @@ Read this file instead of the long prior thread. Written 2026-08-21. Public repo
 | | |
 |---|---|
 | Repo | `github.com/ZacharyTFerguson/agent-orchestrator-console` (Node/React console: chat, cron, heartbeats, SQLite) |
-| Branch | `cursor/oil-change-automation-ea59` (base `main`) |
-| Draft PR | https://github.com/ZacharyTFerguson/agent-orchestrator-console/pull/3 |
+| Branch | `cursor/efleets-copy-update-ea59` (base `main`) |
+| Draft PR | https://github.com/ZacharyTFerguson/agent-orchestrator-console/pull/4 |
 | Cloud run | Oil changes automation migration · `bc-4087ff70-b35a-4807-a261-fda00acbea59` |
 | Cursor owner | `nasbaseball@gmail.com` (Zachary Ferguson) |
 | Environment | Personal DB-managed `[fa4e9ac9-9c72-11f1-ba66-0e7d0216e441](https://cursor.com/dashboard/cloud-agents/environments/e/fa4e9ac9-9c72-11f1-ba66-0e7d0216e441)`. `environmentJsonPath` is null. Repo `.cursor/environment.json` is not the effective source. |
@@ -95,9 +95,15 @@ Composio Connect URL `https://connect.composio.dev/mcp` is live streamable HTTP.
 12. User asked only to log into Sheets — Composio Login via `+` → MCP Servers.
 13. This handoff: Composio is now **ready** with googlesheets connected. Next agent should retry a **header-only** cell read, then stop unless asked to write.
 
+## Dashboard tab (gid `1615250816`)
+
+**PDI Oil Change Tracker & Fleet Automation Dashboard** is an OBJECT canvas — no cell grid. Correct **Oil Change Summary** (VA D–G) and the sorted tab instead. H/I on the summary stay formulas.
+
+VA 31 last reading is **held** at `12949` / `8/11` (card nickname still stamped VA2). See Suspected cards on the dated copy. Do not invent card numbers. Do not paste plates or driver names.
+
 ## Next agent — first actions
 
-1. Dated copy **already has** the 2026-08-21 90-day eFleets CSV apply. Counts: 27 overdue, 5 suspect, 22 backward, 18 incomplete (was 30 / 5 / 14 / 19). Do not paste unit rows.
+1. Dated copy **already has** the 2026-08-21 90-day eFleets CSV apply plus the VA summary sync / VA 31 hold. Sorted-tab counts after the CSV apply: 27 overdue, 5 suspect, 22 backward, 18 incomplete (was 30 / 5 / 14 / 19). Do not paste unit rows.
 2. Do not retarget `config/oil-sheet.json` unless the user says that copy is now the working sheet.
 3. Do not start an environment snapshot or draft build unless the user asks.
 4. eFleets portal login and OneStep History recapture stay HOLD.
