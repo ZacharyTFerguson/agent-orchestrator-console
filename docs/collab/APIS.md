@@ -22,7 +22,7 @@ Never write the original PDI template `1eaz_NlsJ9mohfjR3l61piTQOwuMAjVfqDsC0o4Kf
 
 Set `GOOGLE_SHEETS_ACCESS_TOKEN` (read/write) or `GOOGLE_SHEETS_API_KEY` (public read). When a token is set, `runOilDueListJob` loads the tab over this API instead of a CSV file.
 
-Drive MCP can export the sheet as CSV. It cannot write cells. Cell writes go through this client.
+Drive MCP can export the sheet as CSV. It cannot write cells. Cell writes go through this client **or** Composio `GOOGLESHEETS_UPDATE_VALUES_BATCH` (this Cloud run: `zachary.ferguson.automations@gmail.com`, 60 reads/writes per minute). One-shot eFleets CSV updates target the dated copy in `config/oil-update-copy.json`, not the live working sheet. See [EFLEETS-UPDATE.md](EFLEETS-UPDATE.md).
 
 ## OneStepGPS public API
 

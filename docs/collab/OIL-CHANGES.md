@@ -1,6 +1,6 @@
 # Oil-change automation — Cursor took this over from GrokBot
 
-Compact session context (read first): [HANDOFF.md](HANDOFF.md).
+Compact session context (read first): [HANDOFF.md](HANDOFF.md). One-shot eFleets CSV → dated copy: [EFLEETS-UPDATE.md](EFLEETS-UPDATE.md).
 
 GrokBot (grok.com) used to own the PDI oil-change loop: a 6:00 AM ET Updater, an Implementer, a Reviewer, and internet bot overdue emails. This Node console now runs the **due-list** half of that job.
 

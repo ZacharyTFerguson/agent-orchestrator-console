@@ -31,6 +31,17 @@ eFleets company `583424`, portal `https://login.efleets.com/fleetweb`. No public
 
 Latest known due-list match (GrokBot Aug 19 / later Drive export): **30 overdue, 5 suspect, 14 backward**. Export size ~201 vehicles, ~15 incomplete. Recompute; do not paste unit rows.
 
+## Dated eFleets-update copy (this pass)
+
+Live working sheet stays pinned. Writes from the 90-day eFleets CSVs go to a **copy**:
+
+- File: Automations Copy — eFleets update 2026-08-21
+- ID `1F3KrNhD8xDvIlyumigiQzVkK_C9FaDKOVdJaCX_yASE` · same tab/gid
+- URL: https://docs.google.com/spreadsheets/d/1F3KrNhD8xDvIlyumigiQzVkK_C9FaDKOVdJaCX_yASE/edit?gid=733911326#gid=733911326
+- Pin: `config/oil-update-copy.json`
+- First tab **is** the sorted tab, so a Drive CSV export is that tab. Still write with the named range.
+- Plan: [EFLEETS-UPDATE.md](EFLEETS-UPDATE.md). CLI: `npm run oil-sheet-update`. Do not retarget `config/oil-sheet.json` unless asked.
+
 ## What this branch already shipped
 
 - Due-list: `server/src/oil-changes.js`, `oil-change-job.js`, `oil-change-cli.js` (`npm run oil-changes`)
@@ -39,8 +50,9 @@ Latest known due-list match (GrokBot Aug 19 / later Drive export): **30 overdue,
 - Light clients (no `googleapis`, no Chrome): `server/src/clients/{http,sheets,onestep,efleets}.js`
 - oil-fleet stdio MCP: `server/src/mcp/oil-mcp.js` · tools `oil_status`, `oil_due_list`, `sheets_get_values`, `sheets_update_values`, `onestep_*`, `compose_last_reading`
 - IDE config: `.cursor/mcp.json` lists `composio` → `https://connect.composio.dev/mcp` and `oil-fleet` stdio
-- Docs: `docs/collab/OIL-CHANGES.md`, `APIS.md`, `MCP.md`
-- Tests: `npm test` last green at **40/40** (re-run after code changes)
+- Docs: `docs/collab/OIL-CHANGES.md`, `APIS.md`, `MCP.md`, `EFLEETS-UPDATE.md`
+- Tests: `npm test` last green at **49/49** (re-run after code changes)
+- eFleets CSV → copy: `server/src/efleets-exports.js`, `oil-sheet-update.js`, `npm run oil-sheet-update`
 
 ## Identities (do not paste tokens)
 
@@ -85,11 +97,10 @@ Composio Connect URL `https://connect.composio.dev/mcp` is live streamable HTTP.
 
 ## Next agent — first actions
 
-1. `GetMcpTools` on Composio. If ready, `COMPOSIO_SEARCH_TOOLS` for a Google Sheets header-only get on the working sheet (`spreadsheetId` above, range `eFleets All Cars sorted!A1:H1`).
-2. Confirm the connected Google account can see that file. If not, `COMPOSIO_MANAGE_CONNECTIONS` and ask the user to finish the link as `automations@` or `authority@`.
-3. Do not write I/J or the original template. Do not export the full fleet into chat.
-4. Do not start an environment snapshot or draft build unless the user asks.
-5. eFleets portal login and OneStep History recapture stay HOLD.
+1. If the dated copy still needs the 90-day CSV apply: `npm run oil-sheet-update` locally, then Composio `GOOGLESHEETS_UPDATE_VALUES_BATCH` on **copy** `1F3KrNhD8xDvIlyumigiQzVkK_C9FaDKOVdJaCX_yASE` only. Chunk ~40 ranges. `USER_ENTERED`. Not I/J. Not the live sheet. Not the original template.
+2. Report due-list **counts** only. Do not paste unit/VIN/plate rows.
+3. Do not start an environment snapshot or draft build unless the user asks.
+4. eFleets portal login and OneStep History recapture stay HOLD.
 
 ## Pointers
 
