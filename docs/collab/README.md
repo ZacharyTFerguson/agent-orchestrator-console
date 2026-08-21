@@ -45,6 +45,7 @@ Siblings `../dicomlight` and `../orchestrator` are **workstation-local**, not gi
 - [RULES.md](RULES.md) — SHOULD / MUST NOT, Cursor scaffold freeze, prompt buses, `OWNER-PAUSE`
 - [OIL-CHANGES.md](OIL-CHANGES.md) — Cursor took the GrokBot 5K due-list; live export path and leftover eFleets/OneStep writes
 - [APIS.md](APIS.md) — light Sheets / OneStep / eFleets clients (no googleapis, no Chrome)
+- [MCP.md](MCP.md) — attach the `oil-fleet` MCP in Desktop and Cloud Agents
 
 Sibling operator guides (workstation-local; may be absent on a Cloud Agent VM) — **by name, not copied**:
 

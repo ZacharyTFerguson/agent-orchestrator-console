@@ -88,4 +88,6 @@ npm test               # node:test suite for the orchestrator core
 
 ## See also
 
-Workstation collab map (three planes; **not** LightDicomReader; this app does not open DICOM studies). In-app chat replies are canned templates (`#composeReply`), not an LLM bus — except the oil-change agents, which return the real 5K due-list: [docs/collab/README.md](docs/collab/README.md) · [docs/collab/OIL-CHANGES.md](docs/collab/OIL-CHANGES.md) · [docs/collab/APIS.md](docs/collab/APIS.md).
+Workstation collab map (three planes; **not** LightDicomReader; this app does not open DICOM studies). In-app chat replies are canned templates (`#composeReply`), not an LLM bus — except the oil-change agents, which return the real 5K due-list: [docs/collab/README.md](docs/collab/README.md) · [docs/collab/OIL-CHANGES.md](docs/collab/OIL-CHANGES.md) · [docs/collab/APIS.md](docs/collab/APIS.md) · [docs/collab/MCP.md](docs/collab/MCP.md).
+
+The `oil-fleet` MCP (`.cursor/mcp.json`) exposes those light clients to Cursor. Cloud Agents must also add the same stdio server in the [agents MCP dropdown](https://cursor.com/agents).

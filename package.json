@@ -14,7 +14,8 @@
     "build": "npm --workspace web run build",
     "start": "node server/src/index.js",
     "test": "npm --workspace server test",
-    "oil-changes": "node server/src/oil-change-cli.js"
+    "oil-changes": "node server/src/oil-change-cli.js",
+    "oil-mcp": "node server/src/mcp/oil-mcp.js"
   },
   "engines": {
     "node": ">=20"

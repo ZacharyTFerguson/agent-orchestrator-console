@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "oil-fleet": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/server/src/mcp/oil-mcp.js"],
+      "env": {
+        "GOOGLE_SHEETS_ACCESS_TOKEN": "${env:GOOGLE_SHEETS_ACCESS_TOKEN}",
+        "GOOGLE_SHEETS_API_KEY": "${env:GOOGLE_SHEETS_API_KEY}",
+        "ONESTEP_API_KEY": "${env:ONESTEP_API_KEY}",
+        "ONESTEP_BEARER_TOKEN": "${env:ONESTEP_BEARER_TOKEN}",
+        "OIL_CHANGE_CSV_PATH": "${env:OIL_CHANGE_CSV_PATH}"
+      }
+    }
+  }
+}

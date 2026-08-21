@@ -2,6 +2,8 @@
 
 The oil-change job talks to vendor systems with **native `fetch`**. No `googleapis`, Puppeteer, Chrome, or invented endpoints.
 
+Cloud Agents and the IDE attach those clients as the `oil-fleet` MCP. See [MCP.md](MCP.md). This run already has Drive / Gmail / ClickUp; Drive cannot write sheet cells.
+
 `GET /api/integrations` and `npm run oil-changes -- --integrations` report **configured / not configured** only. Tokens are never logged.
 
 ## Google Sheets API v4 (official)

@@ -25,7 +25,7 @@ GrokBot's 6am prompt also said: update each vehicle from eFleets oil + gas, and 
 
 Until that session is available here, Cursor still owns the due-list. Prefer a Sheets API token so the updater reads the live tab. Otherwise drop a fresh **eFleets All Cars sorted** CSV at `data/efleets-all-cars.csv`.
 
-Vendor API notes (Sheets official REST, OneStep sourced public paths, eFleets = portal export only): [APIS.md](APIS.md).
+Vendor API notes (Sheets official REST, OneStep sourced public paths, eFleets = portal export only): [APIS.md](APIS.md). Attach those clients to Cursor with the `oil-fleet` MCP: [MCP.md](MCP.md).
 
 ## How to run
 
