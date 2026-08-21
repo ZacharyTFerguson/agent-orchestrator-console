@@ -4,7 +4,8 @@
  * Hosted docs are behind the signed-in portal. Sourced endpoints only:
  *   GET /v3/api/public/device              — device list
  *   GET /v3/api/public/device-info         — current device-info (JWT example)
- *   GET /v3/api/public/route/drive-stop    — miles since a timestamp (this account may 403)
+ *   GET /v3/api/public/route/drive-stop    — History miles for a device + window
+ *       required: device_id, dt_tracker_from, dt_tracker_to, stop_duration (portal default 5m0s)
  *   GET /v3/api/public/report-generated/export/:id — generated report file
  *
  * Protected keys: do not send the API key as-is. Wrap it in a short-lived
@@ -121,7 +122,7 @@ export async function oneStepGet(path, query, { env = process.env, fetchImpl = f
 }
 
 export function listDevices(opts) {
-  return oneStepGet(ONESTEP_PATHS.device, {}, opts);
+  return oneStepGet(ONESTEP_PATHS.device, { limit: 300, ...opts?.query }, opts);
 }
 
 export function listDeviceInfo(opts) {
@@ -136,6 +137,19 @@ export function exportGeneratedReport(reportId, opts) {
   return oneStepGet(`${ONESTEP_PATHS.reportExport}/${reportId}`, {}, opts);
 }
 
+function milesFromDistanceField(value) {
+  if (value == null) return null;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() && Number.isFinite(Number(value))) return Number(value);
+  if (typeof value === "object" && !Array.isArray(value)) {
+    const n = Number(value.value);
+    if (!Number.isFinite(n)) return null;
+    const unit = String(value.unit || "mi").toLowerCase();
+    if (unit === "mi" || unit === "mile" || unit === "miles") return n;
+  }
+  return null;
+}
+
 export function extractDistance(payload) {
   if (payload == null) return { miles: null, sourceField: null, rejectedOdometer: false };
   const stack = [payload];
@@ -148,9 +162,8 @@ export function extractDistance(payload) {
       continue;
     }
     for (const key of DISTANCE_KEYS) {
-      if (cur[key] != null && Number.isFinite(Number(cur[key]))) {
-        return { miles: Number(cur[key]), sourceField: key, rejectedOdometer };
-      }
+      const miles = milesFromDistanceField(cur[key]);
+      if (miles != null) return { miles, sourceField: key, rejectedOdometer };
     }
     for (const [key, value] of Object.entries(cur)) {
       if (ODOMETER_KEYS.has(key.toLowerCase()) && value != null) rejectedOdometer = true;

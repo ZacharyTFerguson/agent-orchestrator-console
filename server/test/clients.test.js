@@ -140,6 +140,14 @@ test("OneStep extractDistance uses miles, never odometer", () => {
   assert.equal(ok.miles, 42);
   assert.equal(ok.sourceField, "distance_miles");
 
+  const unitValue = extractDistance({
+    distance: { value: 251.58, unit: "mi", display: "251.6 mi" },
+    odometer_from: 1,
+    odometer_to: 2,
+  });
+  assert.equal(unitValue.miles, 251.58);
+  assert.equal(unitValue.sourceField, "distance");
+
   const onlyOdo = extractDistance({ odometer: 12000, mileage: 12000 });
   assert.equal(onlyOdo.miles, null);
   assert.equal(onlyOdo.rejectedOdometer, true);

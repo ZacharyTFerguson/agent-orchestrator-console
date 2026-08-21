@@ -32,7 +32,7 @@ Hosted apidoc is behind the portal (`https://track.onestepgps.com`). This repo o
 |---|---|---|
 | GET | `/v3/api/public/device` | Device list |
 | GET | `/v3/api/public/device-info` | Device info (current portal example) |
-| GET | `/v3/api/public/route/drive-stop` | Miles since a timestamp (this account may 403) |
+| GET | `/v3/api/public/route/drive-stop` | History miles. Required: `device_id`, `dt_tracker_from`, `dt_tracker_to`, `stop_duration` (`5m0s`). Distance is `{value, unit: "mi"}`. Missing params 403. |
 | GET | `/v3/api/public/report-generated/export/:id` | Generated report file (often empty 200) |
 
 Auth for **protected** keys: do not send the API key as-is. Sign a fresh RS256 JWT (`access_token` = API key, `exp` ≤ 5 minutes) with `ONESTEP_PRIVATE_KEY`, then `Authorization: Bearer <signed-token>`. Client: `server/src/clients/onestep.js`. Probe: `npm run oil-onestep-probe` (status/counts only).
