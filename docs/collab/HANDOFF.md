@@ -59,7 +59,7 @@ Access-request Doc (same folder): https://docs.google.com/document/d/1I6UHBZu0ns
 
 | Server | Status |
 |---|---|
-| **Composio** | **Ready.** Meta-tools present. Catalog text: user manually connected **gmail** and **googlesheets**. Next: `COMPOSIO_SEARCH_TOOLS` then header-only cell read (`eFleets All Cars sorted!A1:H1`). Writes: not I/J, not original template. |
+| **Composio** | **Ready and proven.** Connected as `zachary.ferguson.automations@gmail.com` (`googlesheets` ACTIVE). Header-only `GOOGLESHEETS_BATCH_GET` on `'eFleets All Cars sorted'!A1:H1` succeeded 2026-08-21. Writes: not I/J, not original template. |
 | Google Drive | Ready (owner). Export/read OK. No cell write. |
 | Gmail | Ready (automations@). |
 | ClickUp | Ready (unused for oil). |
