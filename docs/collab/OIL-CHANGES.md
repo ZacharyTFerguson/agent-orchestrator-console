@@ -23,7 +23,7 @@ Rules copied from GrokBot's Aug 18–19 emails:
 
 ## What still needs a signed-in workstation
 
-GrokBot's 6am prompt also said: update each vehicle from eFleets oil + gas, and use OneStep History when gas is still purple. That write path needs the shared Chrome session. This Cloud Agent **does not** store eFleets passwords and **does not** type them.
+GrokBot's 6am prompt also said: update each vehicle from eFleets oil + gas, and use OneStep History when gas is still purple. eFleets login still needs a human on Chrome (do not type passwords). OneStep **shop-stop miles** can be pulled from the terminal: `.cursor/skills/pull-miles-since-oil-shop/SKILL.md`.
 
 Until that session is available here, Cursor still owns the due-list. Prefer a Sheets API token so the updater reads the live tab. Otherwise drop a fresh **eFleets All Cars sorted** CSV at `data/efleets-all-cars.csv`.
 
@@ -37,6 +37,7 @@ npm test
 
 # configured? (booleans only — never prints keys)
 npm run oil-changes -- --integrations
+npm run oil-onestep-probe   # status/counts only; never prints keys or JWTs
 
 # live export (gitignored)
 # save Automations Copy → eFleets All Cars sorted as data/efleets-all-cars.csv

@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { parseCompletedOilChanges, parseFleetIdIndex, parseLatestFuelReadings } from "./efleets-exports.js";
+import { loadCardHomes } from "./oil-card-homes.js";
 import {
   applyPatchesToVehicleRows,
   assertUpdateTarget,
@@ -42,7 +43,7 @@ function main() {
   const chunkSize = Number(arg("--chunk-size") || 40);
   if (!sheetPath || !detailsPath || !maintPath || !spreadsheetId) {
     process.stderr.write(
-      "usage: oil-sheet-update-cli --sheet csv --details csv --maintenance csv --spreadsheet-id id [--fleet csv] [--out json]\n"
+      "usage: oil-sheet-update-cli --sheet csv --details csv --maintenance csv --spreadsheet-id id [--fleet csv] [--card-homes json] [--out json]\n"
     );
     process.exitCode = 2;
     return;
@@ -57,6 +58,7 @@ function main() {
     fuelReadings: parseLatestFuelReadings(load(detailsPath)),
     idIndex: fleetPath ? parseFleetIdIndex(load(fleetPath)) : undefined,
     spreadsheetId,
+    cardHomes: loadCardHomes(arg("--card-homes") || undefined),
   });
 
   const before = buildDueList(vehicles.map((row) => classifyVehicle(row)));

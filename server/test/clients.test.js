@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { createVerify, generateKeyPairSync } from "node:crypto";
 
 import { queryString } from "../src/clients/http.js";
 import {
@@ -11,10 +12,16 @@ import {
 } from "../src/clients/sheets.js";
 import {
   composeLastReading,
+  reconstructLastOil,
   extractDistance,
+  listDeviceInfo,
   listDevices,
   oneStepConfigured,
+  oneStepJwtConfigured,
+  resolveOneStepEnv,
+  signOneStepJwt,
 } from "../src/clients/onestep.js";
+import { probeOneStep } from "../src/oil-onestep-probe-cli.js";
 import {
   eFleetsCapability,
   parseMileageHistoryExport,
@@ -134,6 +141,14 @@ test("OneStep extractDistance uses miles, never odometer", () => {
   assert.equal(ok.miles, 42);
   assert.equal(ok.sourceField, "distance_miles");
 
+  const unitValue = extractDistance({
+    distance: { value: 251.58, unit: "mi", display: "251.6 mi" },
+    odometer_from: 1,
+    odometer_to: 2,
+  });
+  assert.equal(unitValue.miles, 251.58);
+  assert.equal(unitValue.sourceField, "distance");
+
   const onlyOdo = extractDistance({ odometer: 12000, mileage: 12000 });
   assert.equal(onlyOdo.miles, null);
   assert.equal(onlyOdo.rejectedOdometer, true);
@@ -149,6 +164,15 @@ test("Last Reading is Enterprise odo plus OneStep miles since T", () => {
   assert.equal(composeLastReading({ enterpriseOdo: 10, oneStepMiles: null }).reason, "NO_ONESTEP");
 });
 
+test("fat-finger last oil is last good fuel minus GPS since the shop second", () => {
+  assert.deepEqual(reconstructLastOil({ fuelOdo: 275879, oneStepMiles: 3504 }), {
+    skip: false,
+    lastOil: 272375,
+    method: "FAT_FINGER_OIL",
+  });
+  assert.equal(reconstructLastOil({ fuelOdo: 275879, oneStepMiles: null }).reason, "NO_ONESTEP");
+});
+
 test("OneStep listDevices uses api-key query and does not log it", async () => {
   const calls = [];
   const fetchImpl = async (url, opts) => {
@@ -162,6 +186,75 @@ test("OneStep listDevices uses api-key query and does not log it", async () => {
   assert.equal(res.ok, true);
   assert.match(calls[0].url, /^https:\/\/track\.onestepgps\.com\/v3\/api\/public\/device\?api-key=/);
   assert.equal(JSON.stringify(calls[0].opts).includes("secret-key"), false);
+});
+
+test("Cloud OneStep aliases map PEM vs API key by shape", () => {
+  const pem = "-----BEGIN PRIVATE KEY-----\nMIIB\n-----END PRIVATE KEY-----\n";
+  const resolved = resolveOneStepEnv({
+    OneStepAPIKEY: pem,
+    OneStepAPIKEYTobeSigned: "fleet-key-alias",
+  });
+  assert.equal(resolved.ONESTEP_API_KEY, "fleet-key-alias");
+  assert.equal(resolved.ONESTEP_PRIVATE_KEY, pem);
+  assert.equal(oneStepJwtConfigured({
+    OneStepAPIKEY: pem,
+    OneStepAPIKEYTobeSigned: "fleet-key-alias",
+  }), true);
+  assert.equal(oneStepConfigured({ OneStepAPIKEYTobeSigned: "fleet-key-alias" }), true);
+});
+
+test("protected OneStep key is wrapped in a short-lived RS256 JWT", async () => {
+  const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const pem = privateKey.export({ type: "pkcs8", format: "pem" });
+  const calls = [];
+  const fetchImpl = async (url, opts) => {
+    calls.push({ url, opts });
+    return jsonResponse(200, { devices: [] });
+  };
+  const env = { ONESTEP_API_KEY: "secret-key", ONESTEP_PRIVATE_KEY: pem };
+  assert.equal(oneStepJwtConfigured(env), true);
+
+  const token = signOneStepJwt({ apiKey: "secret-key", privateKeyPem: pem, now: 1_700_000_000_000, ttlSec: 60 });
+  const [headerB64, payloadB64, sig] = token.split(".");
+  const header = JSON.parse(Buffer.from(headerB64, "base64url").toString("utf8"));
+  const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf8"));
+  assert.equal(header.alg, "RS256");
+  assert.equal(payload.access_token, "secret-key");
+  assert.equal(payload.exp, 1_700_000_060);
+  const verify = createVerify("RSA-SHA256");
+  verify.update(`${headerB64}.${payloadB64}`);
+  verify.end();
+  assert.equal(verify.verify(publicKey, sig, "base64url"), true);
+
+  const res = await listDeviceInfo({ env, fetchImpl });
+  assert.equal(res.ok, true);
+  assert.equal(calls[0].url, "https://track.onestepgps.com/v3/api/public/device-info");
+  assert.match(calls[0].opts.headers.Authorization, /^Bearer eyJ/);
+  assert.equal(calls[0].url.includes("api-key"), false);
+  assert.equal(JSON.stringify(calls[0]).includes("secret-key"), false);
+  assert.equal(JSON.stringify(calls[0]).includes("BEGIN"), false);
+});
+
+test("oil-onestep-probe reports status and counts only", async () => {
+  const pem = generateKeyPairSync("rsa", { modulusLength: 2048 }).privateKey.export({ type: "pkcs8", format: "pem" });
+  const fetchImpl = async (url) => {
+    if (String(url).includes("device-info")) return jsonResponse(200, { devices: [{ id: 1 }, { id: 2 }] });
+    return jsonResponse(200, { result_list: [{ id: 1 }] });
+  };
+  const report = await probeOneStep({
+    env: { OneStepAPIKEY: pem, OneStepAPIKEYTobeSigned: "secret-key" },
+    fetchImpl,
+  });
+  const printed = JSON.stringify(report);
+  assert.equal(report.apiKey, true);
+  assert.equal(report.privateKey, true);
+  assert.equal(report.jwtMode, true);
+  assert.equal(report.results[0].deviceCount, 2);
+  assert.equal(report.results[1].status, 200);
+  assert.equal(report.results[1].deviceCount, 1);
+  assert.equal(report.exitCode, 0);
+  assert.equal(printed.includes("secret-key"), false);
+  assert.equal(printed.includes("BEGIN"), false);
 });
 
 test("eFleets has no public REST API; history export drops exception rows", () => {
@@ -188,6 +281,7 @@ test("integrationStatus reports booleans only", () => {
   assert.equal(status.workingSheet.gid, "733911326");
   assert.equal(status.sheets.configured, true);
   assert.equal(status.onestep.configured, true);
+  assert.equal(status.onestep.jwt, false);
   assert.equal(status.efleets.configured, false);
   assert.equal(status.sheets.light, true);
   assert.equal(JSON.stringify(status).includes("secret-key"), false);

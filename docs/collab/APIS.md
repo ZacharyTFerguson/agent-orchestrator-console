@@ -31,14 +31,17 @@ Hosted apidoc is behind the portal (`https://track.onestepgps.com`). This repo o
 | Method | Path | Use |
 |---|---|---|
 | GET | `/v3/api/public/device` | Device list |
-| GET | `/v3/api/public/route/drive-stop` | Miles since a timestamp (this account may 403) |
+| GET | `/v3/api/public/device-info` | Device info (current portal example) |
+| GET | `/v3/api/public/route/drive-stop` | History miles. Required: `device_id`, `dt_tracker_from`, `dt_tracker_to`, `stop_duration` (`5m0s`). Distance is `{value, unit: "mi"}`. Missing params 403. |
 | GET | `/v3/api/public/report-generated/export/:id` | Generated report file (often empty 200) |
 
-Auth: `api-key` query param, optional `ONESTEP_BEARER_TOKEN`. Client: `server/src/clients/onestep.js`.
+Auth for **protected** keys: do not send the API key as-is. Sign a fresh RS256 JWT (`access_token` = API key, `exp` ≤ 5 minutes) with `ONESTEP_PRIVATE_KEY`, then `Authorization: Bearer <signed-token>`. Client: `server/src/clients/onestep.js`. Probe: `npm run oil-onestep-probe` (status/counts only).
 
-**Last Reading** is Enterprise odometer at a known second **plus** OneStep distance since that second (`composeLastReading`). OneStep’s own odometer / Calculated Mileage is never used (`extractDistance` rejects those fields).
+Legacy unprotected keys may still use the `api-key` query param. Optional `ONESTEP_BEARER_TOKEN` is a pre-signed JWT, not the raw key.
 
-Set `ONESTEP_API_KEY` if you already have one. Do not paste the key into chat, git, or logs.
+**Last Reading** is Enterprise odometer at a known second **plus** OneStep distance since that second (`composeLastReading`). The known second is the oil-shop History stop, not midnight on the RO date. Skill: `.cursor/skills/pull-miles-since-oil-shop/SKILL.md`. If ≥3 own-card fuels beat a fighting shop odo, invert that (`reconstructLastOil`, `.cursor/skills/fix-fat-finger-oil/SKILL.md`). Swapped PCVN punches: `.cursor/skills/remap-swapped-fuel-cards/SKILL.md`. OneStep’s own odometer / Calculated Mileage is never used (`extractDistance` rejects those fields).
+
+Set `ONESTEP_API_KEY` and `ONESTEP_PRIVATE_KEY` as environment secrets when you want a live pull. Cloud Agents may inject `OneStepAPIKEY` / `OneStepAPIKEYTobeSigned`; the client maps those by PEM shape. Do not paste the key, PEM, or JWT into chat, git, or logs.
 
 ## Enterprise eFleets
 

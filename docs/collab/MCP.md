@@ -50,7 +50,8 @@ Set the vars locally if you have them (do not paste them into chat):
 
 ```bash
 export GOOGLE_SHEETS_ACCESS_TOKEN=...   # write + private read
-export ONESTEP_API_KEY=...              # already on file is fine
+export ONESTEP_API_KEY=...              # protected key; do not paste
+export ONESTEP_PRIVATE_KEY=...          # RSA PEM that signs the JWT
 ```
 
 Then enable **oil-fleet** under Customize → MCP.
@@ -71,7 +72,8 @@ Then enable **oil-fleet** under Customize → MCP.
 
 - `GOOGLE_SHEETS_ACCESS_TOKEN` (optional if you only need Drive CSV export)
 - `GOOGLE_SHEETS_API_KEY` (optional public read)
-- `ONESTEP_API_KEY` (optional)
+- `ONESTEP_API_KEY` (optional; Cloud alias `OneStepAPIKEYTobeSigned`)
+- `ONESTEP_PRIVATE_KEY` (optional RSA PEM; Cloud alias `OneStepAPIKEY` when that secret is a PEM)
 - `ONESTEP_BEARER_TOKEN` (optional)
 
 4. Start a **new** Cloud Agent (or re-enable the server on this run) after saving. This current run cannot see a server that was not attached when it booted.

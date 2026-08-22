@@ -31,6 +31,10 @@ eFleets company `583424`, portal `https://login.efleets.com/fleetweb`. No public
 
 Latest known due-list match (GrokBot Aug 19 / later Drive export): **30 overdue, 5 suspect, 14 backward**. Export size ~201 vehicles, ~15 incomplete. Recompute; do not paste unit rows.
 
+Working-sheet card homes written 2026-08-21 (not I/J): PA21 last oil 129,622 / last reading 130,209; PA23 last reading 65,528; PA9 swapped 129k reading cleared; PA24 own 50,801 kept; VA10 last oil left at 272,375 (do not copy dated-copy 278,374). Physical WEX moves still need a human.
+
+As-is inventory tab **Current Card Assignments** gid `770421133` — 219 WEX last-5 cards from DETAILS 90-day + Utilization (2026-08-21). Question-for-Rich tab **Suspected cards and possible homes** gid `872461432` — Proven: `31757` PA9→PA21, `31781` PA24→PA23. Do not pin CT2/CT3, WNY-9/WNY12, or MD32/MD23 leftover `31104`.
+
 ## Dated eFleets-update copy (this pass)
 
 Live working sheet stays pinned. Writes from the 90-day eFleets CSVs go to a **copy**:
@@ -47,11 +51,12 @@ Live working sheet stays pinned. Writes from the 90-day eFleets CSVs go to a **c
 - Due-list: `server/src/oil-changes.js`, `oil-change-job.js`, `oil-change-cli.js` (`npm run oil-changes`)
 - Agents in `config/orchestrator.config.json`: `oil-updater` (`0 6 * * *`, `oil-due-list`), `oil-implementer`, `oil-reviewer`. Keep Planner / Researcher / Executor.
 - API: `GET/POST /api/oil-changes`, `/api/oil-changes/run`, `GET /api/integrations`
-- Light clients (no `googleapis`, no Chrome): `server/src/clients/{http,sheets,onestep,efleets}.js`
+- Light clients (no `googleapis`, no Chrome): `server/src/clients/{http,sheets,onestep,efleets}.js` (OneStep protected keys → short-lived RS256 JWT)
+- Probe: `npm run oil-onestep-probe` (`server/src/oil-onestep-probe-cli.js`)
 - oil-fleet stdio MCP: `server/src/mcp/oil-mcp.js` · tools `oil_status`, `oil_due_list`, `sheets_get_values`, `sheets_update_values`, `onestep_*`, `compose_last_reading`
 - IDE config: `.cursor/mcp.json` lists `composio` → `https://connect.composio.dev/mcp` and `oil-fleet` stdio
 - Docs: `docs/collab/OIL-CHANGES.md`, `APIS.md`, `MCP.md`, `EFLEETS-UPDATE.md`
-- Tests: `npm test` last green at **49/49** (re-run after code changes)
+- Tests: `npm test` last green at **52/52** (re-run after code changes)
 - eFleets CSV → copy: `server/src/efleets-exports.js`, `oil-sheet-update.js`, `npm run oil-sheet-update`
 
 ## Identities (do not paste tokens)
@@ -100,10 +105,13 @@ Composio Connect URL `https://connect.composio.dev/mcp` is live streamable HTTP.
 1. Dated copy **already has** the 2026-08-21 90-day eFleets CSV apply. Counts: 27 overdue, 5 suspect, 22 backward, 18 incomplete (was 30 / 5 / 14 / 19). Do not paste unit rows.
 2. Do not retarget `config/oil-sheet.json` unless the user says that copy is now the working sheet.
 3. Do not start an environment snapshot or draft build unless the user asks.
-4. eFleets portal login and OneStep History recapture stay HOLD.
+4. eFleets portal login stays HOLD. OneStep JWT wrap + `npm run oil-onestep-probe` are in the client. Cloud secret names `OneStepAPIKEY` / `OneStepAPIKEYTobeSigned` map by PEM shape. Shop-stop miles: `.cursor/skills/pull-miles-since-oil-shop/SKILL.md`. Fat-finger oil: `.cursor/skills/fix-fat-finger-oil/SKILL.md`. Card homes: `.cursor/skills/remap-swapped-fuel-cards/SKILL.md`. Do not paste the key, PEM, or a signed JWT.
 
 ## Pointers
 
 - Due-list rules and cron: `docs/collab/OIL-CHANGES.md`
 - Vendor APIs: `docs/collab/APIS.md`
 - MCP attach: `docs/collab/MCP.md`
+- Last Reading from shop GPS stop: `.cursor/skills/pull-miles-since-oil-shop/SKILL.md`
+- Fat-finger last oil (fuel minus GPS): `.cursor/skills/fix-fat-finger-oil/SKILL.md`
+- Swapped fuel cards: `.cursor/skills/remap-swapped-fuel-cards/SKILL.md` · `config/oil-card-homes.json`

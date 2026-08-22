@@ -15,6 +15,7 @@ import {
 } from "./oil-changes.js";
 import { formatUsDate, normalizeFleetKey, parseUsDate } from "./efleets-exports.js";
 import { assertWritableOilRange } from "./clients/sheets.js";
+import { remapFuelByCardHome, uniqueUnitKeys } from "./oil-card-homes.js";
 
 export const UPDATE_TAB = "eFleets All Cars sorted";
 
@@ -128,14 +129,15 @@ export function toSheetValueRanges(patches) {
   }));
 }
 
-function lookupOil(row, oil, ids) {
+function lookupOil(row, oil, ids, uniqueUnits) {
   if (row.eFleetsId && oil.latestByEfleets.has(row.eFleetsId)) {
     return oil.latestByEfleets.get(row.eFleetsId);
   }
-  if (row.unitKey && oil.latestByUnit.has(row.unitKey)) {
+  const unitOk = row.unitKey && uniqueUnits.has(row.unitKey);
+  if (unitOk && oil.latestByUnit.has(row.unitKey)) {
     return oil.latestByUnit.get(row.unitKey);
   }
-  if (ids?.byUnit.has(row.unitKey)) {
+  if (unitOk && ids?.byUnit.has(row.unitKey)) {
     const mapped = ids.byUnit.get(row.unitKey);
     if (mapped?.eFleetsId && oil.latestByEfleets.has(mapped.eFleetsId)) {
       return oil.latestByEfleets.get(mapped.eFleetsId);
@@ -177,7 +179,7 @@ function shouldWriteReading(row, fuelRec, nextOil) {
     return { ok: false, skip: "older-reading" };
   }
   if (row.lastReading != null && fuelRec.odometer - row.lastReading > JUMP_SUSPECT_MILES) {
-    return { ok: false, skip: "suspect-jump" };
+    if (!fuelRec.remappedFrom) return { ok: false, skip: "suspect-jump" };
   }
   if (row.lastReading === fuelRec.odometer) {
     const sameDay =
@@ -194,10 +196,13 @@ export function proposeOilSheetUpdates({
   idIndex,
   spreadsheetId,
   tab = UPDATE_TAB,
+  cardHomes = [],
 } = {}) {
   if (spreadsheetId === ORIGINAL_TEMPLATE_ID) {
     throw new Error("Refusing write to the original PDI oil-change template");
   }
+  const uniqueUnits = uniqueUnitKeys(sheetRows);
+  const fuel = remapFuelByCardHome(fuelReadings, sheetRows, cardHomes);
   const summary = {
     vehicles: sheetRows.length,
     oilWrites: 0,
@@ -212,8 +217,8 @@ export function proposeOilSheetUpdates({
   const patches = [];
 
   for (const row of sheetRows) {
-    const oilRec = lookupOil(row, oilChanges, idIndex);
-    const fuelRec = lookupFuel(row, fuelReadings, idIndex);
+    const oilRec = lookupOil(row, oilChanges, idIndex, uniqueUnits);
+    const fuelRec = lookupFuel(row, fuel, idIndex);
     if (!oilRec) summary.unmatchedOil += 1;
     if (!fuelRec) summary.unmatchedFuel += 1;
 
