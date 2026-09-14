@@ -112,17 +112,19 @@ function ageFromHeartbeat(iso, now) {
 }
 
 function compactTape(events) {
-  const out = [];
+  const actions = [];
+  const pulses = [];
   const seenHeartbeat = new Set();
   for (const event of events) {
     if (event.type === "heartbeat") {
       if (seenHeartbeat.has(event.agentId)) continue;
       seenHeartbeat.add(event.agentId);
+      pulses.push(event);
+    } else {
+      actions.push(event);
     }
-    out.push(event);
-    if (out.length >= 12) break;
   }
-  return out;
+  return [...actions, ...pulses].slice(0, 12);
 }
 
 function eventDetail(event) {
