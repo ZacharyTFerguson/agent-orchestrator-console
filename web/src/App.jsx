@@ -50,23 +50,76 @@ function useOrchestrator() {
   return { agents, messages, events, oil, integrations, connected, refreshAgents, refreshOil };
 }
 
-function AgentCard({ agent, onRun }) {
+function formatAge(seconds) {
+  if (seconds == null) return "never";
+  if (seconds < 1) return "now";
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.round(seconds / 60);
+  return `${minutes}m ago`;
+}
+
+function WatchPanel({ agents, connected, events, onRun }) {
+  const onCount = agents.filter((a) => a.status === "alive").length;
+  const offCount = agents.length - onCount;
+  const latest = events[0];
+
   return (
-    <div className={`agent-card ${agent.status}`}>
-      <div className="agent-head">
-        <span className="agent-emoji">{agent.emoji}</span>
-        <span className="agent-name">{agent.name}</span>
-        <span className={`dot ${agent.status}`} title={agent.status} />
+    <section className="panel watch-panel">
+      <div className="watch-head">
+        <h2>Watch</h2>
+        <p className="watch-meta">
+          {onCount} on · {offCount} off · socket {connected ? "live" : "offline"}
+          {latest ? ` · last ${latest.type} ${latest.agentId || ""}`.trim() : ""}
+        </p>
       </div>
-      <p className="agent-role">{agent.role}</p>
-      <div className="agent-foot">
-        <span>
-          {agent.status === "alive" ? "alive" : "stale"} ·{" "}
-          {agent.secondsSinceHeartbeat == null ? "—" : `${agent.secondsSinceHeartbeat}s ago`}
-        </span>
-        <button onClick={() => onRun(agent.id)}>Run task</button>
+      <p className="watch-note">This console roster. Not dicomlight Agent Control, YOLO, or OWNER-PAUSE.</p>
+      <div className="watch-table-wrap">
+        <table className="watch-table">
+          <thead>
+            <tr>
+              <th>Agent</th>
+              <th>On / off</th>
+              <th>Last ping</th>
+              <th>Interval</th>
+              <th>Last task</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {agents.map((agent) => (
+              <tr key={agent.id} className={agent.status}>
+                <td>
+                  <span className="watch-name">
+                    {agent.emoji} {agent.name}
+                  </span>
+                  <span className="watch-id">{agent.id}</span>
+                </td>
+                <td>
+                  <span className={`watch-state ${agent.status}`}>
+                    {agent.status === "alive" ? "on" : "off"}
+                  </span>
+                </td>
+                <td>{formatAge(agent.secondsSinceHeartbeat)}</td>
+                <td>{agent.heartbeatSeconds}s</td>
+                <td className="watch-task">
+                  <span className={agent.lastCronStatus === "error" ? "watch-error" : ""}>
+                    {agent.lastCronTask || "—"}
+                  </span>
+                  {agent.lastCronStatus ? (
+                    <span className="watch-cron-status">{agent.lastCronStatus}</span>
+                  ) : null}
+                </td>
+                <td>
+                  <button type="button" onClick={() => onRun(agent.id)}>
+                    Run
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -125,14 +178,7 @@ export default function App() {
       </header>
 
       <main className="layout">
-        <section className="panel agents-panel">
-          <h2>Agents</h2>
-          <div className="agents-grid">
-            {agents.map((a) => (
-              <AgentCard key={a.id} agent={a} onRun={runAgent} />
-            ))}
-          </div>
-        </section>
+        <WatchPanel agents={agents} connected={connected} events={events} onRun={runAgent} />
 
         <section className="panel chat-panel">
           <h2>Chat</h2>

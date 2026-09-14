@@ -55,13 +55,77 @@ body {
 .layout {
   flex: 1;
   display: grid;
-  grid-template-columns: 1.1fr 1.3fr 1fr;
-  grid-template-rows: auto auto;
+  grid-template-columns: 1.3fr 1fr;
+  grid-template-rows: auto minmax(280px, 1fr) auto;
   gap: 18px;
   padding: 18px 24px;
 }
 
+.watch-panel { grid-column: 1 / -1; }
 .oil-panel { grid-column: 1 / -1; min-height: 220px; }
+
+.watch-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.watch-head h2 { margin: 0; }
+.watch-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+.watch-note {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.watch-table-wrap { overflow-x: auto; }
+.watch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.watch-table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.watch-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.watch-table tr.alive { background: rgba(56, 211, 159, 0.06); }
+.watch-table tr.stale { background: rgba(240, 128, 60, 0.08); }
+.watch-name { font-weight: 600; display: block; }
+.watch-id { color: var(--muted); font-size: 11px; }
+.watch-state {
+  display: inline-block;
+  min-width: 36px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+.watch-state.alive { color: var(--alive); border-color: rgba(56, 211, 159, 0.5); }
+.watch-state.stale { color: var(--stale); border-color: rgba(240, 128, 60, 0.5); }
+.watch-task { max-width: 280px; }
+.watch-task span { display: block; }
+.watch-cron-status { color: var(--muted); font-size: 11px; margin-top: 2px; }
+.watch-error { color: var(--stale); }
 .oil-head {
   display: flex;
   align-items: center;
