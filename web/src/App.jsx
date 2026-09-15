@@ -12,8 +12,48 @@ function sqliteToIso(value) {
   return `${value.replace(" ", "T")}Z`;
 }
 
+function messageToEvent(message) {
+  return {
+    type: "message",
+    id: message.id,
+    agentId: message.agent_id || message.sender,
+    task: message.text,
+    status: message.role,
+    at: sqliteToIso(message.created_at) || new Date().toISOString(),
+  };
+}
+
+function cronRowToEvent(row) {
+  return {
+    type: "cron",
+    id: row.id,
+    agentId: row.agent_id,
+    task: row.task,
+    status: row.status,
+    at: sqliteToIso(row.created_at) || new Date().toISOString(),
+  };
+}
+
+function eventKey(event) {
+  if (event.id != null) return `${event.type}:${event.id}`;
+  return `${event.type}:${event.agentId || ""}:${event.at || ""}:${event.task || event.summary || event.status || ""}`;
+}
+
 function pushEvent(prev, event) {
+  const key = eventKey(event);
+  if (prev.some((existing) => eventKey(existing) === key)) return prev;
   return [event, ...prev].slice(0, 40);
+}
+
+function pushEvents(prev, events) {
+  return events.reduce((acc, event) => pushEvent(acc, event), prev);
+}
+
+function mergeMessages(prev, incoming) {
+  if (!incoming?.length) return prev;
+  const ids = new Set(prev.map((m) => m.id));
+  const next = incoming.filter((m) => m && !ids.has(m.id));
+  return next.length ? [...prev, ...next] : prev;
 }
 
 function useOrchestrator() {
@@ -30,6 +70,51 @@ function useOrchestrator() {
     []
   );
 
+  const applyChatResult = useCallback((result) => {
+    const batch = [result?.userMessage, ...(result?.replies || [])].filter(Boolean);
+    if (!batch.length) return;
+    setMessages((prev) => mergeMessages(prev, batch));
+    setEvents((prev) => pushEvents(prev, batch.map(messageToEvent)));
+  }, []);
+
+  const applyRunResult = useCallback((data) => {
+    if (!data?.result?.summary) return;
+    const at = new Date().toISOString();
+    const oilKey = `summary:${data.agentId}:${data.result.summary}`;
+    setEvents((prev) =>
+      pushEvents(prev, [
+        {
+          type: "oil",
+          id: oilKey,
+          agentId: data.agentId,
+          summary: data.result.summary,
+          task: data.result.summary,
+          status: "ok",
+          at,
+        },
+        {
+          type: "cron",
+          id: data.id,
+          agentId: data.agentId,
+          task: data.result.summary,
+          status: "ok",
+          at,
+        },
+      ])
+    );
+  }, []);
+
+  const ingestCronById = useCallback(async (id) => {
+    if (id == null) return;
+    try {
+      const rows = await api("/api/cron");
+      const row = rows.find((r) => r.id === id);
+      if (row) setEvents((prev) => pushEvent(prev, cronRowToEvent(row)));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   useEffect(() => {
     api("/api/integrations").then(setIntegrations).catch(() => {});
     refreshAgents();
@@ -45,55 +130,106 @@ function useOrchestrator() {
             status: row.status,
             at: sqliteToIso(row.created_at),
           })),
-          ...crons.map((row) => ({
-            type: "cron",
-            agentId: row.agent_id,
-            task: row.task,
-            status: row.status,
-            at: sqliteToIso(row.created_at),
-          })),
+          ...crons.map(cronRowToEvent),
+          ...rows.map(messageToEvent),
         ].sort((a, b) => Date.parse(b.at || 0) - Date.parse(a.at || 0));
         setEvents(tape.slice(0, 40));
       })
       .catch(() => {});
 
-    const proto = location.protocol === "https:" ? "wss" : "ws";
-    const ws = new WebSocket(`${proto}://${location.host}/ws`);
-    ws.onopen = () => setConnected(true);
-    ws.onclose = () => setConnected(false);
-    ws.onmessage = (ev) => {
-      const data = JSON.parse(ev.data);
-      if (data.type === "hello") {
-        if (Array.isArray(data.agents)) setAgents(data.agents);
-        return;
-      }
-      if (data.type === "message") {
-        setMessages((prev) => [...prev, data.message]);
-        setEvents((prev) =>
-          pushEvent(prev, {
-            type: "message",
-            agentId: data.agentId || data.message?.sender,
-            task: data.message?.text,
-            status: data.message?.role,
-            at: data.at,
-          })
-        );
-        return;
-      }
-      if (data.type === "heartbeat" || data.type === "cron" || data.type === "oil") {
-        setEvents((prev) => pushEvent(prev, data));
-        refreshAgents();
-        if (data.type === "oil" || data.type === "cron") refreshOil();
+    let disposed = false;
+    let socket = null;
+    let reconnectTimer = null;
+    let attempt = 0;
+
+    const clearReconnect = () => {
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
       }
     };
+
+    const connect = () => {
+      if (disposed) return;
+      clearReconnect();
+      const proto = location.protocol === "https:" ? "wss" : "ws";
+      const ws = new WebSocket(`${proto}://${location.host}/ws`);
+      socket = ws;
+
+      ws.onopen = () => {
+        if (disposed || socket !== ws) return;
+        attempt = 0;
+        setConnected(true);
+      };
+
+      ws.onerror = () => {
+        if (disposed || socket !== ws) return;
+        setConnected(false);
+      };
+
+      ws.onclose = () => {
+        if (disposed || socket !== ws) return;
+        setConnected(false);
+        const delay = Math.min(10_000, 500 * 2 ** attempt);
+        attempt += 1;
+        reconnectTimer = setTimeout(connect, delay);
+      };
+
+      ws.onmessage = (ev) => {
+        if (disposed || socket !== ws) return;
+        const data = JSON.parse(ev.data);
+        if (data.type === "hello") {
+          if (Array.isArray(data.agents)) setAgents(data.agents);
+          return;
+        }
+        if (data.type === "message") {
+          setMessages((prev) => mergeMessages(prev, [data.message]));
+          setEvents((prev) => pushEvent(prev, messageToEvent(data.message)));
+          return;
+        }
+        if (data.type === "heartbeat" || data.type === "cron" || data.type === "oil") {
+          const normalized =
+            data.type === "oil" && data.summary
+              ? { ...data, id: `summary:${data.agentId}:${data.summary}` }
+              : data;
+          setEvents((prev) => pushEvent(prev, normalized));
+          refreshAgents();
+          if (data.type === "oil" || data.type === "cron") refreshOil();
+        }
+      };
+    };
+
+    connect();
+
     const poll = setInterval(refreshAgents, 5000);
     return () => {
-      ws.close();
+      disposed = true;
+      clearReconnect();
       clearInterval(poll);
+      if (socket) {
+        socket.onclose = null;
+        socket.onerror = null;
+        socket.onmessage = null;
+        socket.onopen = null;
+        socket.close();
+      }
+      setConnected(false);
     };
   }, [refreshAgents, refreshOil]);
 
-  return { agents, messages, events, oil, integrations, connected, refreshAgents, refreshOil };
+  return {
+    agents,
+    messages,
+    events,
+    oil,
+    integrations,
+    connected,
+    refreshAgents,
+    refreshOil,
+    applyChatResult,
+    applyRunResult,
+    ingestCronById,
+  };
 }
 
 function formatAge(seconds) {
@@ -237,7 +373,19 @@ function WatchPanel({ agents, connected, events, oil, onRun }) {
 }
 
 export default function App() {
-  const { agents, messages, events, oil, integrations, connected, refreshAgents, refreshOil } = useOrchestrator();
+  const {
+    agents,
+    messages,
+    events,
+    oil,
+    integrations,
+    connected,
+    refreshAgents,
+    refreshOil,
+    applyChatResult,
+    applyRunResult,
+    ingestCronById,
+  } = useOrchestrator();
   const [text, setText] = useState("");
   const [target, setTarget] = useState("");
   const [error, setError] = useState("");
@@ -252,10 +400,11 @@ export default function App() {
     if (!text.trim()) return;
     setError("");
     try {
-      await api("/api/chat", {
+      const result = await api("/api/chat", {
         method: "POST",
         body: JSON.stringify({ text, agentId: target || null }),
       });
+      applyChatResult(result);
       setText("");
     } catch (err) {
       setError(err.message);
@@ -263,16 +412,23 @@ export default function App() {
   };
 
   const runAgent = async (id) => {
-    await api(`/api/agents/${id}/run`, { method: "POST" }).catch(() => {});
-    refreshAgents();
-    refreshOil();
+    setError("");
+    try {
+      const data = await api(`/api/agents/${id}/run`, { method: "POST" });
+      if (data.result) applyRunResult(data);
+      else await ingestCronById(data.id);
+      await Promise.all([refreshAgents(), refreshOil()]);
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   const runOil = async () => {
     setError("");
     try {
-      await api("/api/oil-changes/run", { method: "POST" });
-      refreshOil();
+      const data = await api("/api/oil-changes/run", { method: "POST" });
+      applyRunResult(data);
+      await Promise.all([refreshOil(), refreshAgents()]);
     } catch (err) {
       setError(err.message);
     }
@@ -331,7 +487,7 @@ export default function App() {
               <div key={i} className={`event ${ev.type}`}>
                 <span className="event-type">{ev.type}</span>
                 <span className="event-agent">{ev.agentId}</span>
-                <span className="event-detail">{ev.task || ev.status}</span>
+                <span className="event-detail">{ev.task || ev.summary || ev.status}</span>
                 <span className="event-time">{new Date(ev.at).toLocaleTimeString()}</span>
               </div>
             ))}
