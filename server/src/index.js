@@ -9,6 +9,7 @@ import { existsSync } from "node:fs";
 import { loadConfig } from "./config.js";
 import { openDatabase } from "./db.js";
 import { Orchestrator } from "./orchestrator.js";
+import { integrationStatus } from "./clients/index.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -29,22 +30,40 @@ export function createApp(orchestrator) {
   app.get("/api/messages", (_req, res) => res.json(orchestrator.getMessages()));
   app.get("/api/cron", (_req, res) => res.json(orchestrator.getCronRuns()));
   app.get("/api/heartbeats", (_req, res) => res.json(orchestrator.getHeartbeats()));
-
-  app.post("/api/chat", (req, res) => {
+  app.get("/api/oil-changes", (_req, res) => {
+    const latest = orchestrator.getLatestOilReport();
+    res.json(latest ?? { report: null, message: "No oil-change run yet. Trigger oil-updater." });
+  });
+  app.get("/api/integrations", (_req, res) => {
+    res.json(integrationStatus());
+  });
+  app.post("/api/oil-changes/run", async (_req, res) => {
     try {
-      const { text, agentId } = req.body ?? {};
-      const result = orchestrator.handleChat(text, agentId || null);
+      const result = await orchestrator.runAgentTask("oil-updater");
       res.status(201).json(result);
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
   });
 
-  app.post("/api/agents/:id/run", (req, res) => {
-    const agent = orchestrator.agents.find((a) => a.id === req.params.id);
-    if (!agent) return res.status(404).json({ error: "Unknown agent" });
-    const id = orchestrator.recordCronRun(agent.id, agent.cronTask || "Manual run");
-    res.status(201).json({ id, agentId: agent.id });
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const { text, agentId } = req.body ?? {};
+      const result = await orchestrator.handleChat(text, agentId || null);
+      res.status(201).json(result);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/agents/:id/run", async (req, res) => {
+    try {
+      const result = await orchestrator.runAgentTask(req.params.id);
+      res.status(201).json(result);
+    } catch (err) {
+      const status = /Unknown agent/.test(err.message) ? 404 : 400;
+      res.status(status).json({ error: err.message });
+    }
   });
 
   const webDist = resolve(__dirname, "../../web/dist");

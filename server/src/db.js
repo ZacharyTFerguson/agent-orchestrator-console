@@ -52,9 +52,21 @@ export function openDatabase(dbPath = process.env.DB_PATH || resolve(__dirname, 
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS oil_reports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      agent_id TEXT,
+      overdue_count INTEGER NOT NULL DEFAULT 0,
+      suspect_count INTEGER NOT NULL DEFAULT 0,
+      backward_count INTEGER NOT NULL DEFAULT 0,
+      report TEXT NOT NULL,
+      payload TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at);
     CREATE INDEX IF NOT EXISTS idx_heartbeats_agent ON heartbeats(agent_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_cron_runs_agent ON cron_runs(agent_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_oil_reports_created ON oil_reports(created_at);
   `);
 
   return db;
