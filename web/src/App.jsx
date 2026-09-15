@@ -6,6 +6,56 @@ const api = (path, options) =>
     return r.json();
   });
 
+function sqliteToIso(value) {
+  if (!value) return null;
+  if (/Z$|[+-]\d{2}:?\d{2}$/.test(value) || value.includes("T")) return value;
+  return `${value.replace(" ", "T")}Z`;
+}
+
+function messageToEvent(message) {
+  return {
+    type: "message",
+    id: message.id,
+    agentId: message.agent_id || message.sender,
+    task: message.text,
+    status: message.role,
+    at: sqliteToIso(message.created_at) || new Date().toISOString(),
+  };
+}
+
+function cronRowToEvent(row) {
+  return {
+    type: "cron",
+    id: row.id,
+    agentId: row.agent_id,
+    task: row.task,
+    status: row.status,
+    at: sqliteToIso(row.created_at) || new Date().toISOString(),
+  };
+}
+
+function eventKey(event) {
+  if (event.id != null) return `${event.type}:${event.id}`;
+  return `${event.type}:${event.agentId || ""}:${event.at || ""}:${event.task || event.summary || event.status || ""}`;
+}
+
+function pushEvent(prev, event) {
+  const key = eventKey(event);
+  if (prev.some((existing) => eventKey(existing) === key)) return prev;
+  return [event, ...prev].slice(0, 40);
+}
+
+function pushEvents(prev, events) {
+  return events.reduce((acc, event) => pushEvent(acc, event), prev);
+}
+
+function mergeMessages(prev, incoming) {
+  if (!incoming?.length) return prev;
+  const ids = new Set(prev.map((m) => m.id));
+  const next = incoming.filter((m) => m && !ids.has(m.id));
+  return next.length ? [...prev, ...next] : prev;
+}
+
 function useOrchestrator() {
   const [agents, setAgents] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -20,58 +70,322 @@ function useOrchestrator() {
     []
   );
 
+  const applyChatResult = useCallback((result) => {
+    const batch = [result?.userMessage, ...(result?.replies || [])].filter(Boolean);
+    if (!batch.length) return;
+    setMessages((prev) => mergeMessages(prev, batch));
+    setEvents((prev) => pushEvents(prev, batch.map(messageToEvent)));
+  }, []);
+
+  const applyRunResult = useCallback((data) => {
+    if (!data?.result?.summary) return;
+    const at = new Date().toISOString();
+    const oilKey = `summary:${data.agentId}:${data.result.summary}`;
+    setEvents((prev) =>
+      pushEvents(prev, [
+        {
+          type: "oil",
+          id: oilKey,
+          agentId: data.agentId,
+          summary: data.result.summary,
+          task: data.result.summary,
+          status: "ok",
+          at,
+        },
+        {
+          type: "cron",
+          id: data.id,
+          agentId: data.agentId,
+          task: data.result.summary,
+          status: "ok",
+          at,
+        },
+      ])
+    );
+  }, []);
+
+  const ingestCronById = useCallback(async (id) => {
+    if (id == null) return;
+    try {
+      const rows = await api("/api/cron");
+      const row = rows.find((r) => r.id === id);
+      if (row) setEvents((prev) => pushEvent(prev, cronRowToEvent(row)));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   useEffect(() => {
-    api("/api/messages").then(setMessages).catch(() => {});
     api("/api/integrations").then(setIntegrations).catch(() => {});
     refreshAgents();
     refreshOil();
 
-    const proto = location.protocol === "https:" ? "wss" : "ws";
-    const ws = new WebSocket(`${proto}://${location.host}/ws`);
-    ws.onopen = () => setConnected(true);
-    ws.onclose = () => setConnected(false);
-    ws.onmessage = (ev) => {
-      const data = JSON.parse(ev.data);
-      if (data.type === "message") {
-        setMessages((prev) => [...prev, data.message]);
-      } else if (data.type === "heartbeat" || data.type === "cron" || data.type === "oil") {
-        setEvents((prev) => [data, ...prev].slice(0, 40));
-        refreshAgents();
-        if (data.type === "oil" || data.type === "cron") refreshOil();
+    Promise.all([api("/api/heartbeats"), api("/api/cron"), api("/api/messages")])
+      .then(([heartbeats, crons, rows]) => {
+        setMessages(rows);
+        const tape = [
+          ...heartbeats.map((row) => ({
+            type: "heartbeat",
+            agentId: row.agent_id,
+            status: row.status,
+            at: sqliteToIso(row.created_at),
+          })),
+          ...crons.map(cronRowToEvent),
+          ...rows.map(messageToEvent),
+        ].sort((a, b) => Date.parse(b.at || 0) - Date.parse(a.at || 0));
+        setEvents(tape.slice(0, 40));
+      })
+      .catch(() => {});
+
+    let disposed = false;
+    let socket = null;
+    let reconnectTimer = null;
+    let attempt = 0;
+
+    const clearReconnect = () => {
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
       }
     };
+
+    const connect = () => {
+      if (disposed) return;
+      clearReconnect();
+      const proto = location.protocol === "https:" ? "wss" : "ws";
+      const ws = new WebSocket(`${proto}://${location.host}/ws`);
+      socket = ws;
+
+      ws.onopen = () => {
+        if (disposed || socket !== ws) return;
+        attempt = 0;
+        setConnected(true);
+      };
+
+      ws.onerror = () => {
+        if (disposed || socket !== ws) return;
+        setConnected(false);
+      };
+
+      ws.onclose = () => {
+        if (disposed || socket !== ws) return;
+        setConnected(false);
+        const delay = Math.min(10_000, 500 * 2 ** attempt);
+        attempt += 1;
+        reconnectTimer = setTimeout(connect, delay);
+      };
+
+      ws.onmessage = (ev) => {
+        if (disposed || socket !== ws) return;
+        const data = JSON.parse(ev.data);
+        if (data.type === "hello") {
+          if (Array.isArray(data.agents)) setAgents(data.agents);
+          return;
+        }
+        if (data.type === "message") {
+          setMessages((prev) => mergeMessages(prev, [data.message]));
+          setEvents((prev) => pushEvent(prev, messageToEvent(data.message)));
+          return;
+        }
+        if (data.type === "heartbeat" || data.type === "cron" || data.type === "oil") {
+          const normalized =
+            data.type === "oil" && data.summary
+              ? { ...data, id: `summary:${data.agentId}:${data.summary}` }
+              : data;
+          setEvents((prev) => pushEvent(prev, normalized));
+          refreshAgents();
+          if (data.type === "oil" || data.type === "cron") refreshOil();
+        }
+      };
+    };
+
+    connect();
+
     const poll = setInterval(refreshAgents, 5000);
     return () => {
-      ws.close();
+      disposed = true;
+      clearReconnect();
       clearInterval(poll);
+      if (socket) {
+        socket.onclose = null;
+        socket.onerror = null;
+        socket.onmessage = null;
+        socket.onopen = null;
+        socket.close();
+      }
+      setConnected(false);
     };
   }, [refreshAgents, refreshOil]);
 
-  return { agents, messages, events, oil, integrations, connected, refreshAgents, refreshOil };
+  return {
+    agents,
+    messages,
+    events,
+    oil,
+    integrations,
+    connected,
+    refreshAgents,
+    refreshOil,
+    applyChatResult,
+    applyRunResult,
+    ingestCronById,
+  };
 }
 
-function AgentCard({ agent, onRun }) {
+function formatAge(seconds) {
+  if (seconds == null) return "never";
+  if (seconds < 1) return "now";
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.round(seconds / 60);
+  return `${minutes}m ago`;
+}
+
+function ageFromHeartbeat(iso, now) {
+  if (!iso) return null;
+  const stamp = Date.parse(sqliteToIso(iso));
+  if (Number.isNaN(stamp)) return null;
+  return Math.max(0, Math.round((now - stamp) / 1000));
+}
+
+function compactTape(events) {
+  const actions = [];
+  const pulses = [];
+  const seenHeartbeat = new Set();
+  for (const event of events) {
+    if (event.type === "heartbeat") {
+      if (seenHeartbeat.has(event.agentId)) continue;
+      seenHeartbeat.add(event.agentId);
+      pulses.push(event);
+    } else {
+      actions.push(event);
+    }
+  }
+  return [...actions, ...pulses].slice(0, 12);
+}
+
+function eventDetail(event) {
+  let raw = "";
+  if (event.type === "message") raw = event.task || event.status || "";
+  else if (event.type === "oil") raw = event.summary || event.task || event.status || "";
+  else raw = event.task || event.status || "";
+  if (raw.length > 80) return `${raw.slice(0, 77)}…`;
+  return raw;
+}
+
+function WatchPanel({ agents, connected, events, oil, onRun }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const onCount = agents.filter((a) => a.status === "alive").length;
+  const offCount = agents.length - onCount;
+  const latest = events[0];
+  const tape = compactTape(events);
+  const oilLine = oil?.payload?.summary || oil?.message || null;
+
   return (
-    <div className={`agent-card ${agent.status}`}>
-      <div className="agent-head">
-        <span className="agent-emoji">{agent.emoji}</span>
-        <span className="agent-name">{agent.name}</span>
-        <span className={`dot ${agent.status}`} title={agent.status} />
+    <section className="panel watch-panel">
+      <div className="watch-head">
+        <h2>Watch</h2>
+        <p className="watch-meta">
+          {onCount} on · {offCount} off · socket {connected ? "live" : "offline"}
+          {latest ? ` · last ${latest.type} ${latest.agentId || ""}`.trim() : ""}
+        </p>
       </div>
-      <p className="agent-role">{agent.role}</p>
-      <div className="agent-foot">
-        <span>
-          {agent.status === "alive" ? "alive" : "stale"} ·{" "}
-          {agent.secondsSinceHeartbeat == null ? "—" : `${agent.secondsSinceHeartbeat}s ago`}
-        </span>
-        <button onClick={() => onRun(agent.id)}>Run task</button>
+      <p className="watch-note">
+        This console roster — who is on, last ping, last task, and the live tape.
+        Not dicomlight Agent Control, YOLO, or OWNER-PAUSE.
+      </p>
+      {oilLine ? <p className="watch-oil">{oilLine}</p> : null}
+      <div className="watch-body">
+        <div className="watch-table-wrap">
+          <table className="watch-table">
+            <thead>
+              <tr>
+                <th>Agent</th>
+                <th>On / off</th>
+                <th>Last ping</th>
+                <th>Schedule</th>
+                <th>Last task</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {agents.map((agent) => {
+                const age = ageFromHeartbeat(agent.lastHeartbeat, now);
+                const active = latest?.agentId === agent.id;
+                return (
+                  <tr key={agent.id} className={`${agent.status}${active ? " active" : ""}`}>
+                    <td>
+                      <span className="watch-name">
+                        {agent.emoji} {agent.name}
+                      </span>
+                      <span className="watch-id">{agent.id}</span>
+                    </td>
+                    <td>
+                      <span className={`watch-state ${agent.status}`}>
+                        {agent.status === "alive" ? "on" : "off"}
+                      </span>
+                    </td>
+                    <td>{formatAge(age)}</td>
+                    <td>{agent.cron || `${agent.heartbeatSeconds}s ping`}</td>
+                    <td className="watch-task">
+                      <span className={agent.lastCronStatus === "error" ? "watch-error" : ""}>
+                        {agent.lastCronTask || "—"}
+                      </span>
+                      {agent.lastCronStatus ? (
+                        <span className="watch-cron-status">{agent.lastCronStatus}</span>
+                      ) : null}
+                    </td>
+                    <td>
+                      <button type="button" onClick={() => onRun(agent.id)}>
+                        Run
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <aside className="watch-tape">
+          <h3>Going on</h3>
+          {tape.length === 0 ? (
+            <p className="empty">Waiting for heartbeats, chat, and cron…</p>
+          ) : (
+            tape.map((event, i) => (
+              <div key={`${event.type}-${event.at}-${i}`} className={`event ${event.type}`}>
+                <span className="event-type">{event.type}</span>
+                <span className="event-agent">{event.agentId || "—"}</span>
+                <span className="event-detail">{eventDetail(event)}</span>
+                <span className="event-time">
+                  {event.at ? new Date(event.at).toLocaleTimeString() : ""}
+                </span>
+              </div>
+            ))
+          )}
+        </aside>
       </div>
-    </div>
+    </section>
   );
 }
 
 export default function App() {
-  const { agents, messages, events, oil, integrations, connected, refreshAgents, refreshOil } = useOrchestrator();
+  const {
+    agents,
+    messages,
+    events,
+    oil,
+    integrations,
+    connected,
+    refreshAgents,
+    refreshOil,
+    applyChatResult,
+    applyRunResult,
+    ingestCronById,
+  } = useOrchestrator();
   const [text, setText] = useState("");
   const [target, setTarget] = useState("");
   const [error, setError] = useState("");
@@ -86,10 +400,11 @@ export default function App() {
     if (!text.trim()) return;
     setError("");
     try {
-      await api("/api/chat", {
+      const result = await api("/api/chat", {
         method: "POST",
         body: JSON.stringify({ text, agentId: target || null }),
       });
+      applyChatResult(result);
       setText("");
     } catch (err) {
       setError(err.message);
@@ -97,16 +412,23 @@ export default function App() {
   };
 
   const runAgent = async (id) => {
-    await api(`/api/agents/${id}/run`, { method: "POST" }).catch(() => {});
-    refreshAgents();
-    refreshOil();
+    setError("");
+    try {
+      const data = await api(`/api/agents/${id}/run`, { method: "POST" });
+      if (data.result) applyRunResult(data);
+      else await ingestCronById(data.id);
+      await Promise.all([refreshAgents(), refreshOil()]);
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   const runOil = async () => {
     setError("");
     try {
-      await api("/api/oil-changes/run", { method: "POST" });
-      refreshOil();
+      const data = await api("/api/oil-changes/run", { method: "POST" });
+      applyRunResult(data);
+      await Promise.all([refreshOil(), refreshAgents()]);
     } catch (err) {
       setError(err.message);
     }
@@ -125,14 +447,7 @@ export default function App() {
       </header>
 
       <main className="layout">
-        <section className="panel agents-panel">
-          <h2>Agents</h2>
-          <div className="agents-grid">
-            {agents.map((a) => (
-              <AgentCard key={a.id} agent={a} onRun={runAgent} />
-            ))}
-          </div>
-        </section>
+        <WatchPanel agents={agents} connected={connected} events={events} oil={oil} onRun={runAgent} />
 
         <section className="panel chat-panel">
           <h2>Chat</h2>
@@ -172,7 +487,7 @@ export default function App() {
               <div key={i} className={`event ${ev.type}`}>
                 <span className="event-type">{ev.type}</span>
                 <span className="event-agent">{ev.agentId}</span>
-                <span className="event-detail">{ev.task || ev.status}</span>
+                <span className="event-detail">{ev.task || ev.summary || ev.status}</span>
                 <span className="event-time">{new Date(ev.at).toLocaleTimeString()}</span>
               </div>
             ))}
