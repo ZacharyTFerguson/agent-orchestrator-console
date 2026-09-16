@@ -1,5 +1,5 @@
 import { eFleetsCapability, eFleetsConfigured } from "./efleets.js";
-import { oneStepConfigured } from "./onestep.js";
+import { oneStepConfigured, oneStepJwtConfigured } from "./onestep.js";
 import { sheetsConfigured } from "./sheets.js";
 import { resolveWorkingSheet } from "../oil-changes.js";
 
@@ -13,6 +13,7 @@ export function integrationStatus(env = process.env) {
     },
     onestep: {
       configured: oneStepConfigured(env),
+      jwt: oneStepJwtConfigured(env),
       api: "https://track.onestepgps.com/v3/api/public",
       light: true,
     },

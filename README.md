@@ -85,8 +85,9 @@ npm test               # node:test suite for the orchestrator core
 | `OIL_CHANGE_SHEET_GID` | `733911326` | Tab **eFleets All Cars sorted**. |
 | `GOOGLE_SHEETS_ACCESS_TOKEN` | unset | Sheets API v4 Bearer token (read/write). When set, the due-list loads the working tab over HTTPS. |
 | `GOOGLE_SHEETS_API_KEY` | unset | Sheets API key for public read-only sheets. |
-| `ONESTEP_API_KEY` | unset | OneStep public `api-key`. Never commit or log it. |
-| `ONESTEP_BEARER_TOKEN` | unset | Optional OneStep JWT. |
+| `ONESTEP_API_KEY` | unset | OneStep API key. Protected keys are not sent as-is. Never commit or log it. |
+| `ONESTEP_PRIVATE_KEY` | unset | RSA PEM that signs a short-lived RS256 JWT (`access_token` = API key). |
+| `ONESTEP_BEARER_TOKEN` | unset | Optional pre-signed OneStep JWT. |
 
 ## See also
 

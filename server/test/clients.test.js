@@ -9,11 +9,15 @@ import {
   valuesToCsv,
   sheetsConfigured,
 } from "../src/clients/sheets.js";
+import { generateKeyPairSync, createVerify } from "node:crypto";
 import {
   composeLastReading,
   extractDistance,
+  listDeviceInfo,
   listDevices,
   oneStepConfigured,
+  oneStepJwtConfigured,
+  signOneStepJwt,
 } from "../src/clients/onestep.js";
 import {
   eFleetsCapability,
@@ -164,6 +168,38 @@ test("OneStep listDevices uses api-key query and does not log it", async () => {
   assert.equal(JSON.stringify(calls[0].opts).includes("secret-key"), false);
 });
 
+test("protected OneStep key is wrapped in a short-lived RS256 JWT", async () => {
+  const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const pem = privateKey.export({ type: "pkcs8", format: "pem" });
+  const calls = [];
+  const fetchImpl = async (url, opts) => {
+    calls.push({ url, opts });
+    return jsonResponse(200, { devices: [] });
+  };
+  const env = { ONESTEP_API_KEY: "secret-key", ONESTEP_PRIVATE_KEY: pem };
+  assert.equal(oneStepJwtConfigured(env), true);
+
+  const token = signOneStepJwt({ apiKey: "secret-key", privateKeyPem: pem, now: 1_700_000_000_000, ttlSec: 60 });
+  const [headerB64, payloadB64, sig] = token.split(".");
+  const header = JSON.parse(Buffer.from(headerB64, "base64url").toString("utf8"));
+  const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf8"));
+  assert.equal(header.alg, "RS256");
+  assert.equal(payload.access_token, "secret-key");
+  assert.equal(payload.exp, 1_700_000_060);
+  const verify = createVerify("RSA-SHA256");
+  verify.update(`${headerB64}.${payloadB64}`);
+  verify.end();
+  assert.equal(verify.verify(publicKey, sig, "base64url"), true);
+
+  const res = await listDeviceInfo({ env, fetchImpl });
+  assert.equal(res.ok, true);
+  assert.equal(calls[0].url, "https://track.onestepgps.com/v3/api/public/device-info");
+  assert.match(calls[0].opts.headers.Authorization, /^Bearer eyJ/);
+  assert.equal(calls[0].url.includes("api-key"), false);
+  assert.equal(JSON.stringify(calls[0]).includes("secret-key"), false);
+  assert.equal(JSON.stringify(calls[0]).includes("BEGIN"), false);
+});
+
 test("eFleets has no public REST API; history export drops exception rows", () => {
   const cap = eFleetsCapability();
   assert.equal(cap.publicApi, null);
@@ -188,6 +224,7 @@ test("integrationStatus reports booleans only", () => {
   assert.equal(status.workingSheet.gid, "733911326");
   assert.equal(status.sheets.configured, true);
   assert.equal(status.onestep.configured, true);
+  assert.equal(status.onestep.jwt, false);
   assert.equal(status.efleets.configured, false);
   assert.equal(status.sheets.light, true);
   assert.equal(JSON.stringify(status).includes("secret-key"), false);

@@ -38,7 +38,7 @@ Do not paste API keys into chat. Optional Desktop header: `x-consumer-api-key` f
 | `oil_due_list` | CHANGE OIL AFTER 5K report (Sheets token or CSV). |
 | `sheets_get_values` | Official Sheets `values.get`. |
 | `sheets_update_values` | Official Sheets `values.update`. Blocks original PDI template and columns I/J. |
-| `onestep_devices` | `GET /v3/api/public/device` |
+| `onestep_devices` | `GET /v3/api/public/device` (JWT if `ONESTEP_PRIVATE_KEY` is set) |
 | `onestep_miles_since` | Drive-stop miles; rejects OneStep odometer. |
 | `compose_last_reading` | Enterprise odo + OneStep miles since T. |
 
@@ -71,8 +71,9 @@ Then enable **oil-fleet** under Customize → MCP.
 
 - `GOOGLE_SHEETS_ACCESS_TOKEN` (optional if you only need Drive CSV export)
 - `GOOGLE_SHEETS_API_KEY` (optional public read)
-- `ONESTEP_API_KEY` (optional)
-- `ONESTEP_BEARER_TOKEN` (optional)
+- `ONESTEP_API_KEY` (optional; protected keys need the private key too)
+- `ONESTEP_PRIVATE_KEY` (optional RSA PEM for RS256 JWT wrap)
+- `ONESTEP_BEARER_TOKEN` (optional pre-signed JWT)
 
 4. Start a **new** Cloud Agent (or re-enable the server on this run) after saving. This current run cannot see a server that was not attached when it booted.
 
