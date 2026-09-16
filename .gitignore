@@ -6,3 +6,8 @@ web/dist/
 *.db
 *.db-shm
 *.db-wal
+
+# Migration temp/cache (not part of the archive)
+.migration-blobs/
+scripts/b64_cache/
+scripts/__pycache__/
