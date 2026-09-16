@@ -79,6 +79,19 @@ test("cron runs are recorded", () => {
   assert.equal(runs[0].task, "do the thing");
 });
 
+test("agent status includes last cron run and config schedule", () => {
+  const orch = makeOrchestrator();
+  orch.recordCronRun("planner", "review backlog", "ok");
+  const planner = orch.getAgentStatus().find((a) => a.id === "planner");
+  assert.equal(planner.lastCronTask, "review backlog");
+  assert.equal(planner.lastCronStatus, "ok");
+  assert.ok(planner.lastCronAt);
+  const executor = orch.getAgentStatus().find((a) => a.id === "executor");
+  assert.equal(executor.lastCronTask, null);
+  const oil = orch.getAgentStatus().find((a) => a.id === "oil-updater");
+  assert.equal(oil.job, "oil-due-list");
+});
+
 test("oil-updater run persists a due-list report", async () => {
   const orch = makeOrchestrator();
   const { result } = await orch.runAgentTask("oil-updater");

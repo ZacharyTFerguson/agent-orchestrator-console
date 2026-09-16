@@ -202,12 +202,25 @@ export class Orchestrator extends EventEmitter {
 
   /** Snapshot of every agent plus derived liveness from the latest heartbeat. */
   getAgentStatus() {
+    const configured = new Map(this.agents.map((agent) => [agent.id, agent]));
     const rows = this.db
       .prepare(
         `SELECT a.*, (
            SELECT created_at FROM heartbeats h
            WHERE h.agent_id = a.id ORDER BY h.id DESC LIMIT 1
-         ) AS last_heartbeat
+         ) AS last_heartbeat,
+         (
+           SELECT task FROM cron_runs c
+           WHERE c.agent_id = a.id ORDER BY c.id DESC LIMIT 1
+         ) AS last_cron_task,
+         (
+           SELECT status FROM cron_runs c
+           WHERE c.agent_id = a.id ORDER BY c.id DESC LIMIT 1
+         ) AS last_cron_status,
+         (
+           SELECT created_at FROM cron_runs c
+           WHERE c.agent_id = a.id ORDER BY c.id DESC LIMIT 1
+         ) AS last_cron_at
          FROM agents a ORDER BY a.name`
       )
       .all();
@@ -217,6 +230,7 @@ export class Orchestrator extends EventEmitter {
       const last = row.last_heartbeat ? Date.parse(row.last_heartbeat + "Z") : null;
       const ageSeconds = last ? Math.round((now - last) / 1000) : null;
       const stale = ageSeconds == null || ageSeconds > row.heartbeat_seconds * 3;
+      const extra = configured.get(row.id) ?? {};
       return {
         id: row.id,
         name: row.name,
@@ -226,6 +240,11 @@ export class Orchestrator extends EventEmitter {
         lastHeartbeat: row.last_heartbeat,
         secondsSinceHeartbeat: ageSeconds,
         status: stale ? "stale" : "alive",
+        lastCronTask: row.last_cron_task ?? null,
+        lastCronStatus: row.last_cron_status ?? null,
+        lastCronAt: row.last_cron_at ?? null,
+        cron: extra.cron ?? null,
+        job: extra.job ?? null,
       };
     });
   }
